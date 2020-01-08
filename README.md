@@ -6,8 +6,10 @@ The purpose of this repository is to provide a standalone client for use with th
 
 This repo is packaged and hosted on PyPI.
 
-`pip install alfalfaclient`
-`from alfalfaclient import AlfalfaClient, Historian`
+```
+pip install alfalfaclient
+from alfalfaclient import AlfalfaClient, Historian
+```
 
 For examples of using the client and historian, view the [alfalfa-cbi repo]()
 
