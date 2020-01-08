@@ -10,7 +10,7 @@ import copy
 from collections import OrderedDict
 
 
-class Boptest:
+class AlfalfaClient:
 
     # The url argument is the address of the Boptest server
     # default should be http://localhost/api
