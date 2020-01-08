@@ -19,3 +19,11 @@
 # Custom
 client/__pycache__/*
 
+# Egg
+*.egg-info
+
+# Distribution
+dist
+
+# Build
+build

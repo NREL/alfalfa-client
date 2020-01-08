@@ -7,4 +7,10 @@ setup(name='alfalfaclient',
       author='Cory Mosiman',
       license='MIT',
       packages=['alfalfaclient'],
-      long_description=open('README.MD').read())
+      long_description=open('README.MD').read(),
+      install_requires=[
+            'numpy',
+            'pandas',
+            'requests',
+            'requests-toolbelt'
+      ])

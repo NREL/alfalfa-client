@@ -5,14 +5,12 @@ import os
 import time
 from requests_toolbelt import MultipartEncoder
 from multiprocessing import Pool
-from functools import partial
-import copy
 from collections import OrderedDict
 
 
 class AlfalfaClient:
 
-    # The url argument is the address of the Boptest server
+    # The url argument is the address of the Alfalfa server
     # default should be http://localhost/api
     def __init__(self, url='http://localhost'):
         self.url = url
@@ -75,7 +73,7 @@ class AlfalfaClient:
         p.join()
         return result
 
-    # remove a site for model identified by id
+    # TODO remove a site for model identified by id
     # def remove(self, id):
     ##    mutation = 'mutation { removeSite(siteRef: "%s") }' % (id)
 
