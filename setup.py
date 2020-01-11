@@ -1,7 +1,7 @@
 from setuptools import setup
 
 setup(name='alfalfaclient',
-      version='0.1dev',
+      version='0.1.dev1',
       description='A standalone client for the NREL Alfalfa application',
       url='https://github.com/corymosiman12/alfalfaclient',
       author='Cory Mosiman',
