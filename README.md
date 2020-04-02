@@ -17,4 +17,3 @@ For examples of using the client and historian, view the [alfalfa-cbi repo]()
 - The implemented client is previously referred to as Boptest, from the alfalfa/client/boptest.py implementation.  It has been ported as a standalone package for easier usage across projects.
 
 Testing
-sldfkasdlf
