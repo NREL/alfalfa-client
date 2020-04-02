@@ -1,12 +1,12 @@
 from setuptools import setup
 
-setup(name='alfalfaclient',
-      version='0.1.dev1',
+setup(name='alfalfa-client',
+      version='0.1.dev2',
       description='A standalone client for the NREL Alfalfa application',
-      url='https://github.com/corymosiman12/alfalfaclient',
-      author='Cory Mosiman',
+      url='https://github.com/nrel/alfalfa-client',
+      author=open('AUTHORS.md'),
       license='MIT',
-      packages=['alfalfaclient'],
+      packages=['alfalfa-client'],
       long_description=open('README.MD').read(),
       install_requires=[
             'numpy',
