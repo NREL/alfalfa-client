@@ -1,14 +1,11 @@
 # Credit: Nicholas Long
 
 import os
-import sys
 import pandas as pd
-
-sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 
 
 class Historian(object):
-    def __init__(self, time_step):
+    def __init__(self, time_step=1):
         self.data = {}
         self.name_map = {}
         self.units = {}
