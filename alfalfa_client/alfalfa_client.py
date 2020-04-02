@@ -64,7 +64,7 @@ class AlfalfaClient:
         ids = ', '.join('"{0}"'.format(s) for s in site_ids)
         mutation = 'mutation { advance(siteRefs: [%s]) }' % (ids)
         payload = {'query': mutation}
-        response = requests.post(self.url + '/graphql', json=payload)
+        requests.post(self.url + '/graphql', json=payload)
 
     def stop(self, site_id):
         args = {"url": self.url, "site_id": site_id}
@@ -83,14 +83,14 @@ class AlfalfaClient:
 
     # TODO remove a site for model identified by id
     # def remove(self, id):
-    ##    mutation = 'mutation { removeSite(siteRef: "%s") }' % (id)
+    #    mutation = 'mutation { removeSite(siteRef: "%s") }' % (id)
 
-    ##    payload = {'query': mutation}
+    #    payload = {'query': mutation}
 
-    ##    response = requests.post(self.url + '/graphql', json=payload )
-    ##    print('remove site API response: \n')
+    #    response = requests.post(self.url + '/graphql', json=payload )
+    #    print('remove site API response: \n')
     # print(response.text)
-    ##
+    #
 
     # Set inputs for model identified by display name
     # The inputs argument should be a dictionary of
@@ -106,7 +106,7 @@ class AlfalfaClient:
                     site_id, key, value)
             else:
                 mutation = 'mutation { writePoint(siteRef: "%s", pointName: "%s", level: 1 ) }' % (site_id, key)
-            response = requests.post(self.url + '/graphql', json={'query': mutation})
+            requests.post(self.url + '/graphql', json={'query': mutation})
 
     # Return a dictionary of the output values
     # result = {
@@ -231,7 +231,7 @@ class AlfalfaClient:
         try:
             temp = response.json()
             readable_site_points = process_haystack_rows(temp)
-        except:
+        except BaseException:
             readable_site_points = []
         return readable_site_points
 
@@ -246,7 +246,7 @@ class AlfalfaClient:
         try:
             temp = response.json()
             writable_site_points = process_haystack_rows(temp)
-        except:
+        except BaseException:
             writable_site_points = []
         return writable_site_points
 
@@ -261,7 +261,7 @@ class AlfalfaClient:
         try:
             temp = response.json()
             readable_writable_site_points = process_haystack_rows(temp)
-        except:
+        except BaseException:
             readable_writable_site_points = []
         return readable_writable_site_points
 
@@ -272,7 +272,7 @@ class AlfalfaClient:
         try:
             temp = response.json()
             readable_writable_site_points = process_haystack_rows(temp)
-        except:
+        except BaseException:
             readable_writable_site_points = []
         return readable_writable_site_points
 
@@ -342,7 +342,7 @@ def status(url, siteref):
 
 
 def wait(url, siteref, desired_status):
-    sites = []
+    pass
 
     attempts = 0
     while attempts < 6000:
@@ -443,7 +443,7 @@ def stop_one(args):
 
     mutation = 'mutation { stopSite(siteRef: "%s") }' % (site_id)
     payload = {'query': mutation}
-    response = requests.post(url + '/graphql', json=payload)
+    requests.post(url + '/graphql', json=payload)
 
     wait(url, site_id, "Stopped")
 
