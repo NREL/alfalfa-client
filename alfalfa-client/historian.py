@@ -2,10 +2,7 @@
 
 import os
 import sys
-
 import pandas as pd
-
-from alfalfa_client.lib import *
 
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 
