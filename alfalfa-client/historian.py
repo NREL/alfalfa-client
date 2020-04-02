@@ -13,7 +13,7 @@ class Historian(object):
         self.name_map = {}
         self.units = {}
         self.conversion_map = {}
-        self.time_step = time_step  # time_step stored in minutes
+        self.time_step = time_step # time_step stored in minutes
 
     def add_point(self, name, units, point_name, f_conversion=None):
         """

@@ -17,7 +17,7 @@
 *~
 
 # Custom
-__pycache__
+client/__pycache__/*
 
 # Egg
 *.egg-info
