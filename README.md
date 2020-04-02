@@ -7,13 +7,9 @@ The purpose of this repository is to provide a standalone client for use with th
 This repo is packaged and hosted on PyPI.
 
 ```
-pip install alfalfaclient
-from alfalfaclient import AlfalfaClient, Historian
+pip install alfalfa-client
+from alfalfa_client import AlfalfaClient, Historian
 ```
-
-For examples of using the client and historian, view the [alfalfa-cbi repo]()
 
 # History
 - The implemented client is previously referred to as Boptest, from the alfalfa/client/boptest.py implementation.  It has been ported as a standalone package for easier usage across projects.
-
-Testing
