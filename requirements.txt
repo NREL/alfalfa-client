@@ -1,5 +1,7 @@
 # make sure to add packages to setup.py
 
-numpy==1.19.1
-pandas==1.1.0
+# numpy==1.19.1
+# pandas==1.1.0
+numpy==1.16.6  # need older version until Python > 3.5 (ubuntu > 16.04)
+pandas==0.24.2  # need older version until Python > 3.5
 requests-toolbelt==0.9.1
