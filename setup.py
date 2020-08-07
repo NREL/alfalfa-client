@@ -7,7 +7,7 @@ setup(name='alfalfa_client',
       author=open('AUTHORS.md'),
       license='BSD',
       packages=['alfalfa_client'],
-      long_description=open('README.MD').read(),
+      long_description=open('README.md').read(),
       install_requires=[
             'numpy==1.19.1',
             'pandas==1.1.0',
