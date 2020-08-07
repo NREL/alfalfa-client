@@ -9,7 +9,7 @@ setup(name='alfalfa_client',
       packages=['alfalfa_client'],
       long_description=open('README.md').read(),
       install_requires=[
-            'numpy==1.19.1',
-            'pandas==1.1.0',
+            'numpy==1.16.6',
+            'pandas==0.24.2',
             'requests-toolbelt==0.9.1'
       ])
