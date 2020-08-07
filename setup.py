@@ -1,16 +1,15 @@
 from setuptools import setup
 
-setup(name='alfalfa-client',
-      version='0.1.dev2',
+setup(name='alfalfa_client',
+      version='0.1.pr1',
       description='A standalone client for the NREL Alfalfa application',
       url='https://github.com/nrel/alfalfa-client',
       author=open('AUTHORS.md'),
-      license='MIT',
-      packages=['alfalfa-client'],
-      long_description=open('README.MD').read(),
+      license='BSD',
+      packages=['alfalfa_client'],
+      long_description=open('README.md').read(),
       install_requires=[
-            'numpy',
-            'pandas',
-            'requests',
-            'requests-toolbelt'
+            'numpy==1.19.1',
+            'pandas==1.1.0',
+            'requests-toolbelt==0.9.1'
       ])
