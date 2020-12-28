@@ -1,19 +1,19 @@
 # Credit: Nicholas Long
 
 import os
-import sys
 import pandas as pd
-
-sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 
 
 class Historian(object):
-    def __init__(self, time_step):
+    def __init__(self, time_step=1):
+        """
+        :param time_step: int, time step in minutes
+        """
         self.data = {}
         self.name_map = {}
         self.units = {}
         self.conversion_map = {}
-        self.time_step = time_step # time_step stored in minutes
+        self.time_step = time_step
 
     def add_point(self, name, units, point_name, f_conversion=None):
         """

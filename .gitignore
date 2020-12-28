@@ -27,3 +27,6 @@ dist
 
 # Build
 build
+
+.venv
+.tox
