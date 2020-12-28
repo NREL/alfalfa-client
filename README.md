@@ -23,10 +23,15 @@ This repository is setup to use:
 - [pyenv](https://github.com/pyenv/pyenv#installation) for managing python versions
 - [poetry](https://python-poetry.org/docs/#installation) for managing environment
 - [pre-commit](https://pre-commit.com/#install) for managing code styling
-- tox for running tests in isolated build environments
+- tox for running tests in isolated build environments.  See the expected python versions in [tox.ini](./tox.ini)
 
 # Testing
-
+Assuming poetry is installed and the necessary python versions are installed:
+```bash
+git clone https://github.com/NREL/alfalfa-client.git
+cd alfalfa-client
+poetry run tox
+```
 
 
 # History
