@@ -18,14 +18,13 @@ client = ac.AlfalfaClient
 historian = ah.Historian
 ```
 
-# Setup
+# Setup and Testing
 This repository is setup to use:
 - [pyenv](https://github.com/pyenv/pyenv#installation) for managing python versions
 - [poetry](https://python-poetry.org/docs/#installation) for managing environment
 - [pre-commit](https://pre-commit.com/#install) for managing code styling
 - tox for running tests in isolated build environments.  See the expected python versions in [tox.ini](./tox.ini)
 
-# Testing
 Assuming poetry is installed and the necessary python versions are installed, the following should exit cleanly:
 ```bash
 git clone https://github.com/NREL/alfalfa-client.git
@@ -35,8 +34,8 @@ poetry run tox
 
 This may take some time resolving on the initial run, but subsequent runs should be faster.
 
+See [this gist](https://gist.github.com/corymosiman12/26fb682df2d36b5c9155f344eccbe404) for additional info.
+
 
 # History
 - The implemented client is previously referred to as Boptest, from the alfalfa/client/boptest.py implementation.  It has been ported as a standalone package for easier usage across projects.
-
-<script src="https://gist.github.com/corymosiman12/26fb682df2d36b5c9155f344eccbe404.js"></script>
