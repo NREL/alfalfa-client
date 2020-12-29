@@ -124,9 +124,9 @@ def start_one(args):
     if "timescale" in kwargs:
         mutation = mutation + ', timescale: %s' % kwargs["timescale"]
     if "start_datetime" in kwargs:
-        mutation = mutation + ', startDatetime: "%s"' % kwargs["start_datetime"]
+        mutation = mutation + ', startDatetime: %s' % kwargs["start_datetime"]
     if "end_datetime" in kwargs:
-        mutation = mutation + ', endDatetime: "%s"' % kwargs["end_datetime"]
+        mutation = mutation + ', endDatetime: %s' % kwargs["end_datetime"]
     if "realtime" in kwargs:
         mutation = mutation + ', realtime: %s' % kwargs["realtime"]
     if "external_clock" in kwargs:
