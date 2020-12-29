@@ -140,6 +140,7 @@ def start_one(args):
             break
         else:
             print("Start one status code: {}".format(response.status_code))
+            print(f"start_one error: {response.content}")
 
     wait(url, site_id, "Running")
 
