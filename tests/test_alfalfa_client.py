@@ -35,14 +35,14 @@ class TestAlfalfaClient:
             'meta': {'ver': '2.0'},
             'cols': [
                 {'name': 'id'},
-                {'name': 'value'},
-                # {'name': 'level'},
+                {'name': 'val'},
+                {'name': 'level'},
                 {'name': 'who'},
             ],
             'rows': [{
                 'id': f"r:{point_id}",
-                'value': f"n:2.000000",
-                # 'level': f"n:1",
+                'val': f"n:2.000000",
+                'level': f"n:1.000000",
                 'who': f"s:me"
             }]
         }

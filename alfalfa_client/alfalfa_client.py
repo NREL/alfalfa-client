@@ -27,12 +27,12 @@ class AlfalfaClient:
     @staticmethod
     def construct_point_write_grid(point_id: (str, hszinc.Ref),
                                    value: (int, float, hszinc.Quantity),
-                                   level: int = 2,
+                                   level: (int, float, hszinc.Quantity) = 2,
                                    who: str = 'alfalfa-client'):
         cols = [
             ('id', {}),
-            ('value', {}),
-            # ('level', {}),
+            ('val', {}),
+            ('level', {}),
             ('who', {}),
         ]
         grid = hszinc.Grid(version=hszinc.VER_2_0, columns=cols)
@@ -42,8 +42,8 @@ class AlfalfaClient:
 
         grid.insert(0, {
             'id': new_id,
-            'value': new_value,
-            # 'level': level,
+            'val': new_value,
+            'level': level,
             'who': who
         })
         return grid
