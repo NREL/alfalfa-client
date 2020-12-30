@@ -32,7 +32,7 @@ class AlfalfaClient:
             ('level', {}),
             ('who', {}),
         ]
-        grid = hszinc.Grid(version=hszinc.VER_3_0, columns=cols)
+        grid = hszinc.Grid(version=hszinc.VER_2_0, columns=cols)
         grid.insert(0, {
             'id': hszinc.Ref(point_id),
             'value': hszinc.Quantity(value),
