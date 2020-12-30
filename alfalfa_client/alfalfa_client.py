@@ -41,6 +41,29 @@ class AlfalfaClient:
         })
         return grid
 
+    @staticmethod
+    def get_point_given_point_dis(grid, dis, site_id):
+        """
+
+        :param grid [hszinc.Grid] grid to search
+        :param dis: [str] display name of string to match
+        :param site_id:
+        :return: [dict] a row from an hszinc.Grid
+        """
+        rows = []
+        for row in grid:
+            if 'dis' in row:
+                if dis == row['dis']:
+                    rows.append(row)
+        if len(rows) == 1:
+            return rows[0]
+        elif len(rows) > 1:
+            print(f"Returning first row - multiple matches for dis: {dis} on site: {site_id}")
+            return rows[0]
+        else:
+            print(f"No match for dis: {dis} on site: {site_id}")
+            return {}
+
     def status(self, siteref):
         return status(self.url, siteref)
 
@@ -354,3 +377,21 @@ class AlfalfaClient:
                     break
 
         return result
+
+    def query_points(self, site_id):
+        """
+        Get all points on the site
+        :param site_id: [str]
+        :return: [hszinc.Grid] if successful
+        """
+        id = hszinc.Ref(site_id)
+
+        # Haystack query filter requires ZINC formatted string
+        # hszinc.Ref.__str__ looks like '@abc-123'
+        query = f"siteRef=={id} and point"
+        response = requests.get(self.api_read_filter + query,
+                                headers=self.haystack_json_header)
+        if response.status_code == 200:
+            return hszinc.parse(response.content, mode=hszinc.MODE_JSON)
+        else:
+            raise requests.exceptions.ConnectionError
