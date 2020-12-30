@@ -49,6 +49,16 @@ class AlfalfaClient:
         return grid
 
     @staticmethod
+    def construct_point_write_read_val_grid(point_id: (str, hszinc.Ref)):
+        cols = [('id', {})]
+        grid = hszinc.Grid(version=hszinc.VER_2_0, columns=cols)
+        new_id = point_id if isinstance(point_id, hszinc.Ref) else hszinc.Ref(point_id)
+        grid.insert(0, {
+            'id': new_id
+        })
+        return grid
+
+    @staticmethod
     def get_point_given_point_dis(grid: hszinc.Grid, dis, site_id):
         """
 
@@ -160,6 +170,18 @@ class AlfalfaClient:
         response = requests.post(self.api_point_write,
                                  data=hszinc.dump(point_write_grid, hszinc.MODE_JSON),
                                  headers=self.haystack_json_header)
+        return response
+
+    def get_point_write_val(self, point_write_grid: hszinc.Grid):
+        """
+        api/pointWrite op read request
+        :param point_write_grid: [hszinc.Grid] :see AlfalfaClient.construct_point_write_read_val_grid return
+        :return: [requests.Response] the server message
+        """
+
+        response = requests.get(self.api_point_write,
+                                data=hszinc.dump(point_write_grid, hszinc.MODE_JSON),
+                                headers=self.haystack_json_header)
         return response
 
     # Set inputs for model identified by display name

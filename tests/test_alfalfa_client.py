@@ -48,6 +48,29 @@ class TestAlfalfaClient:
         }
         assert hszinc.dump(g, hszinc.MODE_JSON) == json.dumps(expected)
 
+    @pytest.mark.parametrize('pre_typed', [
+        True,
+        False
+    ])
+    def test_construct_point_write_read_val_grid(self, pre_typed):
+        point_id = 'bfc28235-826e-4af0-8645-f93bd53cbb3b'
+        if pre_typed:
+            new_point_id = hszinc.Ref(point_id)
+        else:
+            new_point_id = point_id
+
+        expected = {
+            'meta': {'ver': '2.0'},
+            'cols': [
+                {'name': 'id'}
+            ],
+            'rows': [{
+                'id': f"r:{point_id}"
+            }]
+        }
+        g = ac.AlfalfaClient.construct_point_write_read_val_grid(new_point_id)
+        assert hszinc.dump(g, hszinc.MODE_JSON) == json.dumps(expected)
+
     def test_construct_advance_mutation(self):
         site_ids = ['abc', 'def']
         mutation = ac.AlfalfaClient.construct_advance_mutation(site_ids)
