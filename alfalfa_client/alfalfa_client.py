@@ -135,7 +135,8 @@ class AlfalfaClient:
 
         return requests.post(self.url + '/graphql', json=payload)
 
-    def point_write(self, point_id: str, value: (int, float), level: (int, float) = 2, who: str = 'alfalfa-client'):
+    def point_write(self, point_id: (str, hszinc.Ref), value: (int, float, hszinc.Quantity),
+                    level: (int, float, hszinc.Quantity) = 2, who: str = 'alfalfa-client'):
         """
         Write a value to the point at the specified level.  All parameters get
         'converted' to Haystack JSON types before being written.
@@ -147,9 +148,13 @@ class AlfalfaClient:
         :param who:
         :return: [requests.Response] the server response
         """
-        grid = self.construct_point_write_grid(hszinc.Ref(point_id),
-                                               hszinc.Quantity(value),
-                                               hszinc.Quantity(level),
+        new_id = point_id if isinstance(point_id, hszinc.Ref) else hszinc.Ref(point_id)
+        new_value = value if isinstance(value, hszinc.Quantity) else hszinc.Quantity(value)
+        new_level = level if isinstance(level, hszinc.Quantity) else hszinc.Quantity(level)
+
+        grid = self.construct_point_write_grid(new_id,
+                                               new_value,
+                                               new_level,
                                                who)
         response = requests.post(self.api_point_write,
                                  data=hszinc.dump(grid, hszinc.MODE_JSON),
