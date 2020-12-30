@@ -3,6 +3,7 @@ import os
 import time
 import uuid
 from collections import OrderedDict
+from datetime import datetime
 
 import requests
 from requests_toolbelt import MultipartEncoder
@@ -122,27 +123,57 @@ def start_one(args):
     mutation = 'mutation { runSite(siteRef: "%s"' % site_id
 
     if "timescale" in kwargs:
-        mutation = mutation + ', timescale: %s' % kwargs["timescale"]
+        val = kwargs['timescale']
+        if not isinstance(val, (int, float)):
+            raise TypeError(f"Expected 'timescale' of type: (int, float), got {type(val)}")
+        mutation = mutation + ', timescale: %s' % val
     if "start_datetime" in kwargs:
-        mutation = mutation + ', startDatetime: "%s"' % kwargs["start_datetime"]
+        val = kwargs['start_datetime']
+        if check_datetime(val):
+            mutation = mutation + ', startDatetime: "%s"' % val
     if "end_datetime" in kwargs:
-        mutation = mutation + ', endDatetime: "%s"' % kwargs["end_datetime"]
+        val = kwargs['end_datetime']
+        if check_datetime(val):
+            mutation = mutation + ', endDatetime: "%s"' % val
     if "realtime" in kwargs:
-        mutation = mutation + ', realtime: %s' % kwargs["realtime"]
+        val = kwargs['realtime']
+        if not isinstance(val, bool):
+            raise TypeError(f"Expected 'realtime' of type: bool, got {type(val)}")
+        mutation = mutation + ', realtime: %s' % val
     if "external_clock" in kwargs:
-        mutation = mutation + ', externalClock: %s' % kwargs["external_clock"]
+        val = kwargs['external_clock']
+        if not isinstance(val, bool):
+            raise TypeError(f"Expected 'external_clock' of type: bool, got {type(val)}")
+        mutation = mutation + ', externalClock: %s' % val
 
     mutation = mutation + ') }'
 
-    for _ in range(3):
+    successful = False
+    attempts = 3
+    for _ in range(attempts):
         response = requests.post(url + '/graphql', json={'query': mutation})
         if response.status_code == 200:
+            successful = True
             break
         else:
             print("Start one status code: {}".format(response.status_code))
             print(f"start_one error: {response.content}")
 
+    if not successful:
+        raise requests.exceptions.ConnectionError(
+            f"Unable to connect to Alfalfa server. Attempts: {attempts}.  Last status code: {response.status_code}.  Content: {response.content}")
     wait(url, site_id, "Running")
+
+
+def check_datetime(dt):
+    if isinstance(dt, datetime):
+        return True
+    elif isinstance(dt, str):
+        # This will raise a ValueError if incorrect format
+        _ = datetime.strptime(dt, '%Y-%m-%dT%H:%M:%S')
+        return True
+    else:
+        raise TypeError(f"datetime: {dt} must be a datetime object or an ISO8601 formatted string")
 
 
 def stop_one(args):
