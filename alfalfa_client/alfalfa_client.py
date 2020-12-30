@@ -2,8 +2,9 @@ import json
 from multiprocessing import Pool
 
 import requests
+import hszinc
 
-from alfalfa_client.lib import convert, process_haystack_rows, start_one, status, stop_one, submit_one, wait
+from alfalfa_client.lib import process_haystack_rows, start_one, status, stop_one, submit_one, wait
 
 
 class AlfalfaClient:
@@ -12,7 +13,8 @@ class AlfalfaClient:
     # default should be http://localhost/api
     def __init__(self, url='http://localhost'):
         self.url = url
-        self.haystack_filter = self.url + '/api/read?filter='
+        self.api_read_filter = self.url + '/api/read?filter='
+        self.api_point_write = self.url + '/api/pointWrite'
         self.haystack_json_header = {
             'Content-Type': 'application/json',
             'Accept': 'application/json'
@@ -20,6 +22,24 @@ class AlfalfaClient:
         self.readable_site_points = None  # Populated by get_read_site_points
         self.writable_site_points = None  # Populated by get_write_site_points
         self.readable_writable_site_points = None  # Populated by get_read_write_site_points
+
+    @staticmethod
+    def construct_point_write_grid(point_id: str, value: (int, float), level: (int, float) = 2,
+                                   who: str = 'alfalfa-client'):
+        cols = [
+            ('id', {}),
+            ('value', {}),
+            ('level', {}),
+            ('who', {}),
+        ]
+        grid = hszinc.Grid(version=hszinc.VER_3_0, columns=cols)
+        grid.insert(0, {
+            'id': hszinc.Ref(point_id),
+            'value': hszinc.Quantity(value),
+            'level': hszinc.Quantity(level),
+            'who': who
+        })
+        return grid
 
     def status(self, siteref):
         return status(self.url, siteref)
@@ -79,16 +99,35 @@ class AlfalfaClient:
         p.join()
         return result
 
-    # TODO remove a site for model identified by id
-    # def remove(self, id):
-    #    mutation = 'mutation { removeSite(siteRef: "%s") }' % (id)
+    def remove_site(self, site_id):
+        """
+        Remove a site from the host
+        :param site_id: site to remove_site
+        :return: [requests.Response]
+        """
+        mutation = 'mutation { removeSite(siteRef: "%s") }' % site_id
 
-    #    payload = {'query': mutation}
+        payload = {'query': mutation}
 
-    #    response = requests.post(self.url + '/graphql', json=payload )
-    #    print('remove site API response: \n')
-    # print(response.text)
-    #
+        return requests.post(self.url + '/graphql', json=payload)
+
+    def point_write(self, point_id: str, value: (int, float), level: (int, float) = 2, who: str = 'alfalfa-client'):
+        """
+        Write a value to the point at the specified level.  All parameters get
+        'converted' to Haystack JSON types before being written.
+        See https://project-haystack.org/doc/Ops#pointWrite
+
+        :param point_id:
+        :param value:
+        :param level:
+        :param who:
+        :return: [requests.Response] the server response
+        """
+        grid = self.construct_point_write_grid(point_id, value, level, who)
+        response = requests.post(self.api_point_write,
+                                 json=hszinc.dump_grid(grid, hszinc.MODE_JSON),
+                                 headers=self.haystack_json_header)
+        return response
 
     # Set inputs for model identified by display name
     # The inputs argument should be a dictionary of
@@ -112,7 +151,8 @@ class AlfalfaClient:
     # output_name2 : output_value2
     # }
     def outputs(self, site_id):
-        query = 'query { viewer { sites(siteRef: "%s") { points(cur: true) { dis tags { key value } } } } }' % (site_id)
+        query = 'query { viewer { sites(siteRef: "%s") { points(cur: true) { dis tags { key value } } } } }' % (
+            site_id)
         payload = {'query': query}
         response = requests.post(self.url + '/graphql', json=payload)
 
@@ -124,7 +164,10 @@ class AlfalfaClient:
             tags = point["tags"]
             for tag in tags:
                 if tag["key"] == "curVal":
-                    result[convert(point["dis"])] = convert(tag["value"])
+                    # Remove Haystack typing info
+                    dis = hszinc.parse_scalar(point['dis'], mode=hszinc.MODE_JSON)
+                    val = hszinc.parse_scalar(point['value'], mode=hszinc.MODE_JSON)
+                    result[dis] = val
                     break
 
         return result
@@ -134,7 +177,8 @@ class AlfalfaClient:
     # result = [output_name1, output_name2, ...]
     # TODO this is semi-duplicate of the get_read_site_points method.
     def all_cur_points(self, site_id):
-        query = 'query { viewer { sites(siteRef: "%s") { points(cur: true) { dis tags { key value } } } } }' % (site_id)
+        query = 'query { viewer { sites(siteRef: "%s") { points(cur: true) { dis tags { key value } } } } }' % (
+            site_id)
         payload = {'query': query}
         response = requests.post(self.url + '/graphql', json=payload)
 
@@ -143,7 +187,9 @@ class AlfalfaClient:
         result = []
 
         for point in points:
-            result.append(convert(point["dis"]))
+            # Remove Haystack typing info
+            dis = hszinc.parse_scalar(point['dis'], mode=hszinc.MODE_JSON)
+            result.append(dis)
 
         return result
 
@@ -154,7 +200,8 @@ class AlfalfaClient:
     # output_name2 : unit12
     # }
     def all_cur_points_with_units(self, site_id):
-        query = 'query { viewer { sites(siteRef: "%s") { points(cur: true) { dis tags { key value } } } } }' % (site_id)
+        query = 'query { viewer { sites(siteRef: "%s") { points(cur: true) { dis tags { key value } } } } }' % (
+            site_id)
         payload = {'query': query}
         response = requests.post(self.url + '/graphql', json=payload)
 
@@ -166,7 +213,10 @@ class AlfalfaClient:
             tags = point["tags"]
             for tag in tags:
                 if tag["key"] == "unit":
-                    result[convert(point["dis"])] = convert(tag["value"])
+                    # Remove Haystack typing info
+                    dis = hszinc.parse_scalar(point['dis'], mode=hszinc.MODE_JSON)
+                    val = hszinc.parse_scalar(point['value'], mode=hszinc.MODE_JSON)
+                    result[dis] = val
                     break
 
         return result
@@ -196,7 +246,9 @@ class AlfalfaClient:
         result = []
 
         for point in points:
-            result.append(convert(point["dis"]))
+            # Remove Haystack typing info
+            dis = hszinc.parse_scalar(point['dis'], mode=hszinc.MODE_JSON)
+            result.append(dis)
 
         return result
 
@@ -214,7 +266,9 @@ class AlfalfaClient:
         result = []
 
         for point in points:
-            result.append(convert(point["dis"]))
+            # Remove Haystack typing info
+            dis = hszinc.parse_scalar(point['dis'], mode=hszinc.MODE_JSON)
+            result.append(dis)
 
         return result
 
@@ -224,7 +278,7 @@ class AlfalfaClient:
     #   - point and cur and not equipRef
     def get_read_site_points(self, site_id):
         query = 'siteRef==@{} and point and cur and not equipRef'.format(site_id)
-        response = requests.get(self.haystack_filter + query,
+        response = requests.get(self.api_read_filter + query,
                                 headers=self.haystack_json_header)
         try:
             temp = response.json()
@@ -239,7 +293,7 @@ class AlfalfaClient:
     #   - point and writable and not equipRef
     def get_write_site_points(self, site_id):
         query = 'siteRef==@{} and point and writable and not equipRef'.format(site_id)
-        response = requests.get(self.haystack_filter + query,
+        response = requests.get(self.api_read_filter + query,
                                 headers=self.haystack_json_header)
         try:
             temp = response.json()
@@ -254,7 +308,7 @@ class AlfalfaClient:
     #   - point and writable and cur and not equipRef
     def get_read_write_site_points(self, site_id):
         query = 'siteRef==@{} and point and writable and cur and not equipRef'.format(site_id)
-        response = requests.get(self.haystack_filter + query,
+        response = requests.get(self.api_read_filter + query,
                                 headers=self.haystack_json_header)
         try:
             temp = response.json()
@@ -265,7 +319,7 @@ class AlfalfaClient:
 
     def get_thermal_zones(self, site_id):
         query = 'siteRef==@{} and zone'.format(site_id)
-        response = requests.get(self.haystack_filter + query,
+        response = requests.get(self.api_read_filter + query,
                                 headers=self.haystack_json_header)
         try:
             temp = response.json()
@@ -293,7 +347,10 @@ class AlfalfaClient:
             tags = point["tags"]
             for tag in tags:
                 if tag["key"] == "writeStatus":
-                    result[convert(point["dis"])] = convert(tag["value"])
+                    # Remove Haystack typing info
+                    dis = hszinc.parse_scalar(point['dis'], mode=hszinc.MODE_JSON)
+                    val = hszinc.parse_scalar(point['value'], mode=hszinc.MODE_JSON)
+                    result[dis] = val
                     break
 
         return result
