@@ -4,13 +4,13 @@ import alfalfa_client.historian as ah
 
 class TestAlfalfaClient:
     def test_instantiation(self):
-        client = ac.AlfalfaClient
+        client = ac.AlfalfaClient()
         assert client is not None
         assert client.url == 'http://localhost'
 
 
 class TestHistorian:
     def test_historian_instantiation(self):
-        hist = ah.Historian
+        hist = ah.Historian()
         assert hist is not None
         assert hist.time_step == 1
