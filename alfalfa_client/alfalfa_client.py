@@ -24,8 +24,9 @@ class AlfalfaClient:
         self.readable_writable_site_points = None  # Populated by get_read_write_site_points
 
     @staticmethod
-    def construct_point_write_grid(point_id: hszinc.Ref, value: hszinc.Quantity,
-                                   level: hszinc.Quantity = hszinc.Quantity(2),
+    def construct_point_write_grid(point_id: (str, hszinc.Ref),
+                                   value: (int, float, hszinc.Quantity),
+                                   level: (int, float, hszinc.Quantity) = 2,
                                    who: str = 'alfalfa-client'):
         cols = [
             ('id', {}),
@@ -34,10 +35,15 @@ class AlfalfaClient:
             ('who', {}),
         ]
         grid = hszinc.Grid(version=hszinc.VER_2_0, columns=cols)
+
+        new_id = point_id if isinstance(point_id, hszinc.Ref) else hszinc.Ref(point_id)
+        new_value = value if isinstance(value, hszinc.Quantity) else hszinc.Quantity(value)
+        new_level = level if isinstance(level, hszinc.Quantity) else hszinc.Quantity(level)
+
         grid.insert(0, {
-            'id': point_id,
-            'value': value,
-            'level': level,
+            'id': new_id,
+            'value': new_value,
+            'level': new_level,
             'who': who
         })
         return grid
@@ -135,29 +141,16 @@ class AlfalfaClient:
 
         return requests.post(self.url + '/graphql', json=payload)
 
-    def point_write(self, point_id: (str, hszinc.Ref), value: (int, float, hszinc.Quantity),
-                    level: (int, float, hszinc.Quantity) = 2, who: str = 'alfalfa-client'):
+    def point_write(self, point_write_grid: hszinc.Grid):
         """
-        Write a value to the point at the specified level.  All parameters get
-        'converted' to Haystack JSON types before being written.
-        See https://project-haystack.org/doc/Ops#pointWrite
+        Write the grid to api/pointWrite op.
 
-        :param point_id:
-        :param value:
-        :param level:
-        :param who:
+        :param point_write_grid: [hszinc.Grid] :see AlfalfaClient.construct_point_write_grid return
         :return: [requests.Response] the server response
         """
-        new_id = point_id if isinstance(point_id, hszinc.Ref) else hszinc.Ref(point_id)
-        new_value = value if isinstance(value, hszinc.Quantity) else hszinc.Quantity(value)
-        new_level = level if isinstance(level, hszinc.Quantity) else hszinc.Quantity(level)
 
-        grid = self.construct_point_write_grid(new_id,
-                                               new_value,
-                                               new_level,
-                                               who)
         response = requests.post(self.api_point_write,
-                                 data=hszinc.dump(grid, hszinc.MODE_JSON),
+                                 data=hszinc.dump(point_write_grid, hszinc.MODE_JSON),
                                  headers=self.haystack_json_header)
         return response
 
