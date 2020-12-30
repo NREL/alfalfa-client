@@ -75,11 +75,12 @@ class TestCreateRunSiteMutation:
             # -- Should get here
             assert True
 
-    @pytest.mark.parametrize('parameter, value', [
-        ('realtime', True),
-        ('realtime', False),
+    @pytest.mark.parametrize('parameter, mutated_param, value', [
+        ('realtime', 'realtime', True),
+        ('timescale', 'timescale', False),
+        ('external_clock', 'externalClock', False),
     ])
-    def test_boolean_mutation_as_expected(self, create_run_site_mutation_default_args, parameter, value):
+    def test_boolean_mutation_as_expected(self, create_run_site_mutation_default_args, parameter, mutated_param, value):
         # -- Setup
         args = create_run_site_mutation_default_args
         args['kwargs'] = {parameter: value}
@@ -87,8 +88,9 @@ class TestCreateRunSiteMutation:
 
         # -- Define expectations
         expected_val = 'true' if value else 'false'
+
         # Double brackets escape brackets in f-string
-        expected_mutation = f"mutation {{ runSite(siteRef: \"{site_id}\", {parameter}: {expected_val}) }}"
+        expected_mutation = f"mutation {{ runSite(siteRef: \"{site_id}\", {mutated_param}: {expected_val}) }}"
 
         # -- Assert
         assert mutation == expected_mutation

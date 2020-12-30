@@ -129,7 +129,7 @@ def create_run_site_mutation(args: dict):
         val = kwargs['timescale']
         if not isinstance(val, (int, float)):
             raise TypeError(f"Expected 'timescale' of type: (int, float), got {type(val)}")
-        mutation = mutation + f", timescale: {val}"
+        mutation = mutation + f", timescale: {val}".lower()
     if "start_datetime" in kwargs:
         val = kwargs['start_datetime']
         if check_datetime(val):
@@ -151,7 +151,8 @@ def create_run_site_mutation(args: dict):
             raise TypeError(f"Expected 'external_clock' of type: bool, got {type(val)}")
 
         # This changes from False to false, a JSON bool type
-        mutation = mutation + f", externalClock: {val}".lower()
+        val = f"{val}".lower()
+        mutation = mutation + f", externalClock: {val}"
 
     mutation = mutation + ') }'
     return url, site_id, mutation
