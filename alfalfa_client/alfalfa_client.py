@@ -148,7 +148,7 @@ class AlfalfaClient:
         """
         grid = self.construct_point_write_grid(point_id, value, level, who)
         response = requests.post(self.api_point_write,
-                                 json=hszinc.dump_grid(grid, hszinc.MODE_JSON),
+                                 json=hszinc.dump(grid, hszinc.MODE_JSON),
                                  headers=self.haystack_json_header)
         return response
 
