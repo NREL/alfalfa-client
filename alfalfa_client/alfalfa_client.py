@@ -27,24 +27,23 @@ class AlfalfaClient:
     @staticmethod
     def construct_point_write_grid(point_id: (str, hszinc.Ref),
                                    value: (int, float, hszinc.Quantity),
-                                   level: (int, float, hszinc.Quantity) = 2,
+                                   level: int = 2,
                                    who: str = 'alfalfa-client'):
         cols = [
             ('id', {}),
             ('value', {}),
-            ('level', {}),
+            # ('level', {}),
             ('who', {}),
         ]
         grid = hszinc.Grid(version=hszinc.VER_2_0, columns=cols)
 
         new_id = point_id if isinstance(point_id, hszinc.Ref) else hszinc.Ref(point_id)
         new_value = value if isinstance(value, hszinc.Quantity) else hszinc.Quantity(value)
-        new_level = level if isinstance(level, hszinc.Quantity) else hszinc.Quantity(level)
 
         grid.insert(0, {
             'id': new_id,
             'value': new_value,
-            'level': new_level,
+            # 'level': level,
             'who': who
         })
         return grid

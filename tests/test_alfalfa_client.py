@@ -36,13 +36,13 @@ class TestAlfalfaClient:
             'cols': [
                 {'name': 'id'},
                 {'name': 'value'},
-                {'name': 'level'},
+                # {'name': 'level'},
                 {'name': 'who'},
             ],
             'rows': [{
                 'id': f"r:{point_id}",
                 'value': f"n:2.000000",
-                'level': f"n:1.000000",
+                # 'level': f"n:1",
                 'who': f"s:me"
             }]
         }
