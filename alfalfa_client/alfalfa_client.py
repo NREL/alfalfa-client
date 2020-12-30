@@ -1,3 +1,4 @@
+from typing import List
 import json
 from multiprocessing import Pool
 
@@ -71,6 +72,10 @@ class AlfalfaClient:
             print(f"No match for dis: {dis} on site: {site_id}")
             return {}
 
+    @staticmethod
+    def construct_advance_mutation(site_ids: List):
+        return f'mutation {{ advance(siteRefs: {json.dumps(site_ids)}) }}'
+
     def status(self, siteref):
         return status(self.url, siteref)
 
@@ -108,9 +113,13 @@ class AlfalfaClient:
         p.join()
         return result
 
-    def advance(self, site_ids):
-        ids = ', '.join('"{0}"'.format(s) for s in site_ids)
-        mutation = 'mutation { advance(siteRefs: [%s]) }' % (ids)
+    def advance(self, site_ids: List):
+        """
+        Advance all of the sites in the given list.
+        :param site_ids:
+        :return: [requests.Response]
+        """
+        mutation = self.construct_advance_mutation(site_ids)
         payload = {'query': mutation}
         requests.post(self.url + '/graphql', json=payload)
 

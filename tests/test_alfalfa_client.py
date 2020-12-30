@@ -48,6 +48,11 @@ class TestAlfalfaClient:
         }
         assert hszinc.dump(g, hszinc.MODE_JSON) == json.dumps(expected)
 
+    def test_construct_advance_mutation(self):
+        site_ids = ['abc', 'def']
+        mutation = ac.AlfalfaClient.construct_advance_mutation(site_ids)
+        assert mutation == 'mutation { advance(siteRefs: ["abc", "def"]) }'
+
 
 class TestHistorian:
     def test_historian_instantiation(self):
