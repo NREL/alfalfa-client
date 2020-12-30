@@ -9,27 +9,6 @@ import requests
 from requests_toolbelt import MultipartEncoder
 
 
-# remove any hastack type info from value and convert numeric strings
-# to python float. ie s: maps to python string n: maps to python float,
-# other values are simply returned unchanged, thus retaining any haystack type prefix
-def convert(value):
-    if value[0:2] == 's:':
-        return value[2:]
-    elif value[0:2] == 'n:':
-        return float(value[2:])
-    else:
-        return value
-
-
-# Remove haystack type info (s: and n: ONLY) from a list of strings.
-# Return list
-def convert_all(values):
-    v2 = []
-    for v in values:
-        v2.append(convert(v))
-    return v2
-
-
 def status(url, siteref):
     status = ''
 
@@ -115,38 +94,8 @@ def submit_one(args):
     return uid
 
 
-def start_one(args):
-    url = args["url"]
-    site_id = args["site_id"]
-    kwargs = args["kwargs"]
-
-    mutation = 'mutation { runSite(siteRef: "%s"' % site_id
-
-    if "timescale" in kwargs:
-        val = kwargs['timescale']
-        if not isinstance(val, (int, float)):
-            raise TypeError(f"Expected 'timescale' of type: (int, float), got {type(val)}")
-        mutation = mutation + ', timescale: %s' % val
-    if "start_datetime" in kwargs:
-        val = kwargs['start_datetime']
-        if check_datetime(val):
-            mutation = mutation + ', startDatetime: "%s"' % val
-    if "end_datetime" in kwargs:
-        val = kwargs['end_datetime']
-        if check_datetime(val):
-            mutation = mutation + ', endDatetime: "%s"' % val
-    if "realtime" in kwargs:
-        val = kwargs['realtime']
-        if not isinstance(val, bool):
-            raise TypeError(f"Expected 'realtime' of type: bool, got {type(val)}")
-        mutation = mutation + ', realtime: %s' % val
-    if "external_clock" in kwargs:
-        val = kwargs['external_clock']
-        if not isinstance(val, bool):
-            raise TypeError(f"Expected 'external_clock' of type: bool, got {type(val)}")
-        mutation = mutation + ', externalClock: %s' % val
-
-    mutation = mutation + ') }'
+def start_one(args: dict):
+    url, site_id, mutation = create_run_site_mutation(args)
 
     successful = False
     attempts = 3
@@ -165,7 +114,55 @@ def start_one(args):
     wait(url, site_id, "Running")
 
 
-def check_datetime(dt):
+def create_run_site_mutation(args: dict):
+    """
+    Create a mutation string necessary for the GraphQL runSite mutation
+    :param args: arguments for mutation
+    :return: [Tuple(str, str, str)] url, site_id, mutation
+    """
+    url = args["url"]
+    site_id = args["site_id"]
+    kwargs = args["kwargs"]
+    mutation = 'mutation { runSite(siteRef: "%s"' % site_id
+
+    if "timescale" in kwargs:
+        val = kwargs['timescale']
+        if not isinstance(val, (int, float)):
+            raise TypeError(f"Expected 'timescale' of type: (int, float), got {type(val)}")
+        mutation = mutation + f", timescale: {val}"
+    if "start_datetime" in kwargs:
+        val = kwargs['start_datetime']
+        if check_datetime(val):
+            mutation = mutation + ', startDatetime: "%s"' % val
+    if "end_datetime" in kwargs:
+        val = kwargs['end_datetime']
+        if check_datetime(val):
+            mutation = mutation + ', endDatetime: "%s"' % val
+    if "realtime" in kwargs:
+        val = kwargs['realtime']
+        if not isinstance(val, bool):
+            raise TypeError(f"Expected 'realtime' of type: bool, got {type(val)}")
+
+        # This changes from False to false, a JSON bool type
+        mutation = mutation + f", realtime: {val}".lower()
+    if "external_clock" in kwargs:
+        val = kwargs['external_clock']
+        if not isinstance(val, bool):
+            raise TypeError(f"Expected 'external_clock' of type: bool, got {type(val)}")
+
+        # This changes from False to false, a JSON bool type
+        mutation = mutation + f", externalClock: {val}".lower()
+
+    mutation = mutation + ') }'
+    return url, site_id, mutation
+
+
+def check_datetime(dt: [str, datetime]):
+    """
+    Check the input is an ISO8601 formatted string or a datetime object
+    :param dt:
+    :return: [True] if is valid, else raises TypeError
+    """
     if isinstance(dt, datetime):
         return True
     elif isinstance(dt, str):
