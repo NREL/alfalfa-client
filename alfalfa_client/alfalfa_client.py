@@ -24,7 +24,8 @@ class AlfalfaClient:
         self.readable_writable_site_points = None  # Populated by get_read_write_site_points
 
     @staticmethod
-    def construct_point_write_grid(point_id: str, value: (int, float), level: (int, float) = 2,
+    def construct_point_write_grid(point_id: hszinc.Ref, value: hszinc.Quantity,
+                                   level: hszinc.Quantity = hszinc.Quantity(2),
                                    who: str = 'alfalfa-client'):
         cols = [
             ('id', {}),
@@ -34,15 +35,15 @@ class AlfalfaClient:
         ]
         grid = hszinc.Grid(version=hszinc.VER_2_0, columns=cols)
         grid.insert(0, {
-            'id': hszinc.Ref(point_id),
-            'value': hszinc.Quantity(value),
-            'level': hszinc.Quantity(level),
+            'id': point_id,
+            'value': value,
+            'level': level,
             'who': who
         })
         return grid
 
     @staticmethod
-    def get_point_given_point_dis(grid, dis, site_id):
+    def get_point_given_point_dis(grid: hszinc.Grid, dis, site_id):
         """
 
         :param grid [hszinc.Grid] grid to search
@@ -146,7 +147,10 @@ class AlfalfaClient:
         :param who:
         :return: [requests.Response] the server response
         """
-        grid = self.construct_point_write_grid(point_id, value, level, who)
+        grid = self.construct_point_write_grid(hszinc.Ref(point_id),
+                                               hszinc.Quantity(value),
+                                               hszinc.Quantity(level),
+                                               who)
         response = requests.post(self.api_point_write,
                                  data=hszinc.dump(grid, hszinc.MODE_JSON),
                                  headers=self.haystack_json_header)

@@ -13,11 +13,11 @@ class TestAlfalfaClient:
         assert client.url == 'http://localhost'
 
     def test_construct_point_write_grid(self):
-        id = 'bfc28235-826e-4af0-8645-f93bd53cbb3b'
-        value = 2
-        level = 1
+        point_id = hszinc.Ref('bfc28235-826e-4af0-8645-f93bd53cbb3b')
+        value = hszinc.Quantity(2)
+        level = hszinc.Quantity(1)
         who = 'me'
-        g = ac.AlfalfaClient.construct_point_write_grid(id, value, level, who)
+        g = ac.AlfalfaClient.construct_point_write_grid(point_id, value, level, who)
         expected = {
             'meta': {'ver': '3.0'},
             'cols': [
@@ -27,7 +27,7 @@ class TestAlfalfaClient:
                 {'name': 'who'},
             ],
             'rows': [{
-                'id': f"r:{id}",
+                'id': f"r:{point_id}",
                 'value': f"n:2.000000",
                 'level': f"n:1.000000",
                 'who': f"s:{who}"
