@@ -82,6 +82,17 @@ class AlfalfaClient:
             return {}
 
     @staticmethod
+    def get_highest_priority_value(grid: hszinc.Grid):
+        """
+        Iterate through the rows and get the top value
+        :param grid:
+        :return: one of the hszinc.datatypes, likely a string or number
+        """
+        for row in grid:
+            if 'val' in row:
+                return row['val']
+
+    @staticmethod
     def construct_advance_mutation(site_ids: List):
         return f'mutation {{ advance(siteRefs: {json.dumps(site_ids)}) }}'
 
