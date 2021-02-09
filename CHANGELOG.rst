@@ -1,8 +1,14 @@
 Change Log
 ==========
 
+v0.1.0-dev7
+-----------
+Date: 2021-02-09
+
+* Fix externalClock bug
+
 v0.1.0-dev6
----------
+-----------
 Date: 2020-12-30
 
 * Ability to query points
