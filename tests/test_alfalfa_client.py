@@ -41,9 +41,9 @@ class TestAlfalfaClient:
             ],
             'rows': [{
                 'id': f"r:{point_id}",
-                'val': f"n:2.000000",
-                'level': f"n:1.000000",
-                'who': f"s:me"
+                'val': "n:2.000000",
+                'level': "n:1.000000",
+                'who': "s:me"
             }]
         }
         assert hszinc.dump(g, hszinc.MODE_JSON) == json.dumps(expected)
