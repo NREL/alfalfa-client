@@ -6,6 +6,7 @@ v0.1.0-dev7 (unreleased)
 Date: 2021-02-09
 
 * Fix externalClock bug
+* Update importlib-metadata to latest
 
 v0.1.0-dev6
 -----------
