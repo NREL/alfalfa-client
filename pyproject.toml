@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "alfalfa-client"
-version = "0.1.0-pr1"
+version = "0.1.0-beta.1"
 description = "A standalone client for the NREL Alfalfa application"
 authors = [
     'Kyle Benne <kyle.benne@nrel.gov>',
