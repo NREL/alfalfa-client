@@ -3,9 +3,7 @@ Change Log
 
 v0.1.0-dev6 (unreleased)
 -----------
-Date: 2020-12-30
-
-* Ability to query points
+* Update importlib-metadata to latest
 
 v0.1.0-dev5
 ---------
