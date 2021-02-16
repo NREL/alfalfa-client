@@ -1,10 +1,42 @@
-import json
+"""
+****************************************************************************************************
+:copyright (c) 2008-2021 URBANopt, Alliance for Sustainable Energy, LLC, and other contributors.
+
+All rights reserved.
+
+Redistribution and use in source and binary forms, with or without modification, are permitted
+provided that the following conditions are met:
+
+Redistributions of source code must retain the above copyright notice, this list of conditions
+and the following disclaimer.
+
+Redistributions in binary form must reproduce the above copyright notice, this list of conditions
+and the following disclaimer in the documentation and/or other materials provided with the
+distribution.
+
+Neither the name of the copyright holder nor the names of its contributors may be used to endorse
+or promote products derived from this software without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR
+IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND
+FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR
+CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER
+IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT
+OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+****************************************************************************************************
+"""
+
 from multiprocessing import Pool
 
-import requests
 import hszinc
+import json
+import requests
+from typing import List
 
 from alfalfa_client.lib import process_haystack_rows, start_one, status, stop_one, submit_one, wait
+from alfalfa_client.query_constructor import QueryConstructor as QC
 
 
 class AlfalfaClient:
@@ -24,22 +56,78 @@ class AlfalfaClient:
         self.readable_writable_site_points = None  # Populated by get_read_write_site_points
 
     @staticmethod
-    def construct_point_write_grid(point_id: str, value: (int, float), level: (int, float) = 2,
+    def construct_point_write_grid(point_id: (str, hszinc.Ref),
+                                   value: (int, float, hszinc.Quantity),
+                                   level: (int, float, hszinc.Quantity) = 2,
                                    who: str = 'alfalfa-client'):
         cols = [
             ('id', {}),
-            ('value', {}),
+            ('val', {}),
             ('level', {}),
             ('who', {}),
         ]
-        grid = hszinc.Grid(version=hszinc.VER_3_0, columns=cols)
+        grid = hszinc.Grid(version=hszinc.VER_2_0, columns=cols)
+
+        new_id = point_id if isinstance(point_id, hszinc.Ref) else hszinc.Ref(point_id)
+        new_value = value if isinstance(value, hszinc.Quantity) else hszinc.Quantity(value)
+
         grid.insert(0, {
-            'id': hszinc.Ref(point_id),
-            'value': hszinc.Quantity(value),
-            'level': hszinc.Quantity(level),
+            'id': new_id,
+            'val': new_value,
+            'level': level,
             'who': who
         })
         return grid
+
+    @staticmethod
+    def construct_point_write_read_val_grid(point_id: (str, hszinc.Ref)):
+        cols = [
+            ('id', {})
+        ]
+        grid = hszinc.Grid(version=hszinc.VER_2_0, columns=cols)
+        new_id = point_id if isinstance(point_id, hszinc.Ref) else hszinc.Ref(point_id)
+        grid.insert(0, {
+            'id': new_id
+        })
+        return grid
+
+    @staticmethod
+    def get_point_given_point_dis(grid: hszinc.Grid, dis, site_id):
+        """
+
+        :param grid [hszinc.Grid] grid to search
+        :param dis: [str] display name of string to match
+        :param site_id:
+        :return: [dict] a row from an hszinc.Grid
+        """
+        rows = []
+        for row in grid:
+            if 'dis' in row:
+                if dis == row['dis']:
+                    rows.append(row)
+        if len(rows) == 1:
+            return rows[0]
+        elif len(rows) > 1:
+            print(f"Returning first row - multiple matches for dis: {dis} on site: {site_id}")
+            return rows[0]
+        else:
+            print(f"No match for dis: {dis} on site: {site_id}")
+            return {}
+
+    @staticmethod
+    def get_highest_priority_value(grid: hszinc.Grid):
+        """
+        Iterate through the rows and get the top value
+        :param grid:
+        :return: one of the hszinc.datatypes, likely a string or number
+        """
+        for row in grid:
+            if 'val' in row:
+                return row['val']
+
+    @staticmethod
+    def construct_advance_mutation(site_ids: List):
+        return f'mutation {{ advance(siteRefs: {json.dumps(site_ids)}) }}'
 
     def status(self, siteref):
         return status(self.url, siteref)
@@ -78,9 +166,13 @@ class AlfalfaClient:
         p.join()
         return result
 
-    def advance(self, site_ids):
-        ids = ', '.join('"{0}"'.format(s) for s in site_ids)
-        mutation = 'mutation { advance(siteRefs: [%s]) }' % (ids)
+    def advance(self, site_ids: List):
+        """
+        Advance all of the sites in the given list.
+        :param site_ids:
+        :return: [requests.Response]
+        """
+        mutation = self.construct_advance_mutation(site_ids)
         payload = {'query': mutation}
         requests.post(self.url + '/graphql', json=payload)
 
@@ -111,32 +203,34 @@ class AlfalfaClient:
 
         return requests.post(self.url + '/graphql', json=payload)
 
-    def point_write(self, point_id: str, value: (int, float), level: (int, float) = 2, who: str = 'alfalfa-client'):
+    def point_write(self, point_write_grid: hszinc.Grid):
         """
-        Write a value to the point at the specified level.  All parameters get
-        'converted' to Haystack JSON types before being written.
-        See https://project-haystack.org/doc/Ops#pointWrite
+        Post the grid to api/pointWrite op.  This can either write a value, or if the Grid
+        just has an 'id' key, it will get the write array for that point
 
-        :param point_id:
-        :param value:
-        :param level:
-        :param who:
+        :param point_write_grid: [hszinc.Grid] :see AlfalfaClient.construct_point_write_grid return
         :return: [requests.Response] the server response
         """
-        grid = self.construct_point_write_grid(point_id, value, level, who)
+
         response = requests.post(self.api_point_write,
-                                 json=hszinc.dump_grid(grid, hszinc.MODE_JSON),
+                                 data=hszinc.dump(point_write_grid, hszinc.MODE_JSON),
                                  headers=self.haystack_json_header)
         return response
 
-    # Set inputs for model identified by display name
-    # The inputs argument should be a dictionary of
-    # with the form
-    # inputs = {
-    #  input_name: value1,
-    #  input_name2: value2
-    # }
+    # TODO: I don't trust this method.  Add tests
     def setInputs(self, site_id, inputs):
+        """
+        Set inputs for model identified by display name
+        The inputs argument should be a dictionary of
+        with the form
+        inputs = {
+         input_name: value1,
+         input_name2: value2
+        }
+
+        :param site_id: [str] site of interest
+        :param inputs: [dict]
+        """
         for key, value in inputs.items():
             if value or (value == 0):
                 mutation = 'mutation { writePoint(siteRef: "%s", pointName: "%s", value: %s, level: 1 ) }' % (
@@ -145,15 +239,18 @@ class AlfalfaClient:
                 mutation = 'mutation { writePoint(siteRef: "%s", pointName: "%s", level: 1 ) }' % (site_id, key)
             requests.post(self.url + '/graphql', json={'query': mutation})
 
-    # Return a dictionary of the output values
-    # result = {
-    # output_name1 : output_value1,
-    # output_name2 : output_value2
-    # }
-    def outputs(self, site_id):
-        query = 'query { viewer { sites(siteRef: "%s") { points(cur: true) { dis tags { key value } } } } }' % (
-            site_id)
-        payload = {'query': query}
+    def outputs(self, site_id: str):
+        """
+        Return a dictionary of the output values
+        result = {
+        output_name1 : output_value1,
+        output_name2 : output_value2
+        }
+
+        :param site_id: [str] site to get outputs for
+        :return:
+        """
+        payload = {'query': QC.outputs(site_id)}
         response = requests.post(self.url + '/graphql', json=payload)
 
         j = json.loads(response.text)
@@ -161,25 +258,29 @@ class AlfalfaClient:
         result = {}
 
         for point in points:
-            tags = point["tags"]
-            for tag in tags:
+            for tag in point["tags"]:
                 if tag["key"] == "curVal":
                     # Remove Haystack typing info
                     dis = hszinc.parse_scalar(point['dis'], mode=hszinc.MODE_JSON)
-                    val = hszinc.parse_scalar(point['value'], mode=hszinc.MODE_JSON)
+                    val = hszinc.parse_scalar(tag['value'], mode=hszinc.MODE_JSON)
                     result[dis] = val
                     break
 
         return result
 
-    # Return a list of all of the points in the
-    # model which have the 'cur' tag.
-    # result = [output_name1, output_name2, ...]
     # TODO this is semi-duplicate of the get_read_site_points method.
-    def all_cur_points(self, site_id):
-        query = 'query { viewer { sites(siteRef: "%s") { points(cur: true) { dis tags { key value } } } } }' % (
-            site_id)
-        payload = {'query': query}
+    def all_cur_points(self, site_id: str):
+        """
+        Return a list of all of the points in the
+        model which have the 'cur' tag.
+        result = [output_name1, output_name2, ...]
+
+        :param site_id: [str] site to get outputs for
+        :return:
+        """
+
+        payload = {'query': QC.all_cur_points(site_id)}
+
         response = requests.post(self.url + '/graphql', json=payload)
 
         j = json.loads(response.text)
@@ -193,16 +294,20 @@ class AlfalfaClient:
 
         return result
 
-    # Return a dictionary of the units for each
-    # of the points.  Only points with units are returned.
-    # result = {
-    # output_name1 : unit1,
-    # output_name2 : unit12
-    # }
-    def all_cur_points_with_units(self, site_id):
-        query = 'query { viewer { sites(siteRef: "%s") { points(cur: true) { dis tags { key value } } } } }' % (
-            site_id)
-        payload = {'query': query}
+    def all_cur_points_with_units(self, site_id: str):
+        """
+        Return a dictionary of the units for each
+        of the points.  Only points with units are returned.
+        result = {
+        output_name1 : unit1,
+        output_name2 : unit12
+        }
+
+        :param site_id: [str] site to get outputs for
+        :return:
+        """
+
+        payload = {'query': QC.all_cur_points_with_units(site_id)}
         response = requests.post(self.url + '/graphql', json=payload)
 
         j = json.loads(response.text)
@@ -210,35 +315,41 @@ class AlfalfaClient:
         result = {}
 
         for point in points:
-            tags = point["tags"]
-            for tag in tags:
+            for tag in point["tags"]:
                 if tag["key"] == "unit":
                     # Remove Haystack typing info
                     dis = hszinc.parse_scalar(point['dis'], mode=hszinc.MODE_JSON)
-                    val = hszinc.parse_scalar(point['value'], mode=hszinc.MODE_JSON)
+                    val = hszinc.parse_scalar(tag['value'], mode=hszinc.MODE_JSON)
                     result[dis] = val
                     break
 
         return result
 
-    # Return the current time, as understood by the simulation
-    # result = String(%Y-%m-%dT%H:%M:%S)
-    def get_sim_time(self, site_id):
-        query = 'query { viewer { sites(siteRef: "%s") { datetime } } }' % (site_id)
-        payload = {'query': query}
+    def get_sim_time(self, site_id: str):
+        """
+        Return the current time, as understood by the simulation
+        result = String(%Y-%m-%dT%H:%M:%S)
+
+        :param site_id: [str] site to get outputs for
+        :return:
+        """
+        payload = {'query': QC.get_sim_time(site_id)}
         response = requests.post(self.url + '/graphql', json=payload)
 
         j = json.loads(response.text)
         dt = j["data"]["viewer"]["sites"][0]["datetime"]
         return dt
 
-    # Return a list of all the points in the model which
-    # have the 'writable' tag.
-    # result = [output_name1, output_name2, ...]
-    def all_writable_points(self, site_id):
-        query = 'query { viewer { sites(siteRef: "%s") { points(writable: true) { dis tags { key value } } } } }' % (
-            site_id)
-        payload = {'query': query}
+    def all_writable_points(self, site_id: str):
+        """
+        Return a list of all the points in the model which
+        have the 'writable' tag.
+        result = [output_name1, output_name2, ...]
+
+        :param site_id: [str] site to get outputs for
+        :return:
+        """
+        payload = {'query': QC.all_writable_points(site_id)}
         response = requests.post(self.url + '/graphql', json=payload)
 
         j = json.loads(response.text)
@@ -252,13 +363,16 @@ class AlfalfaClient:
 
         return result
 
-    # Return a list of all the points in the model which
-    # have the 'cur' and 'writable' tag.
-    # result = [output_name1, output_name2, ...]
-    def all_cur_writable_points(self, site_id):
-        query = 'query { viewer { sites(siteRef: "%s") { points(writable: true, cur: true) { dis tags { key value } } } } }' % (
-            site_id)
-        payload = {'query': query}
+    def all_cur_writable_points(self, site_id: str):
+        """
+        Return a list of all the points in the model which
+        have the 'cur' and 'writable' tag.
+        result = [output_name1, output_name2, ...]
+
+        :param site_id: [str] site to get outputs for
+        :return:
+        """
+        payload = {'query': QC.all_cur_writable_points(site_id)}
         response = requests.post(self.url + '/graphql', json=payload)
 
         j = json.loads(response.text)
@@ -272,12 +386,17 @@ class AlfalfaClient:
 
         return result
 
-    # Return list of dictionary
-    # point entities.  The entities will be filtered by
-    # to correspond to the site_id passed, with the following:
-    #   - point and cur and not equipRef
-    def get_read_site_points(self, site_id):
-        query = 'siteRef==@{} and point and cur and not equipRef'.format(site_id)
+    def get_read_site_points(self, site_id: str):
+        """
+        Return list of dictionary
+        point entities.  The entities will be filtered by
+        to correspond to the site_id passed, with the following:
+          - point and cur and not equipRef
+
+        :param site_id: [str] site of interest
+        :return:
+        """
+        query = QC.get_read_site_points(site_id)
         response = requests.get(self.api_read_filter + query,
                                 headers=self.haystack_json_header)
         try:
@@ -287,12 +406,17 @@ class AlfalfaClient:
             readable_site_points = []
         return readable_site_points
 
-    # Return list of dictionary point entities.
-    # Entities will be filtered to correspond to the site_id
-    # passed, with the following:
-    #   - point and writable and not equipRef
-    def get_write_site_points(self, site_id):
-        query = 'siteRef==@{} and point and writable and not equipRef'.format(site_id)
+    def get_write_site_points(self, site_id: str):
+        """
+        Return list of dictionary point entities.
+        Entities will be filtered to correspond to the site_id
+        passed, with the following:
+          - point and writable and not equipRef
+
+        :param site_id: [str] site of interest
+        :return:
+        """
+        query = QC.get_write_site_points(site_id)
         response = requests.get(self.api_read_filter + query,
                                 headers=self.haystack_json_header)
         try:
@@ -302,12 +426,18 @@ class AlfalfaClient:
             writable_site_points = []
         return writable_site_points
 
-    # Return list of dictionary point entities.
-    # Entities will be filtered to correspond to the site_id
-    # passed, with the following:
-    #   - point and writable and cur and not equipRef
-    def get_read_write_site_points(self, site_id):
-        query = 'siteRef==@{} and point and writable and cur and not equipRef'.format(site_id)
+    # TODO: migrate to return hszinc.Grid
+    def get_read_write_site_points(self, site_id: str):
+        """
+        Return list of dictionary point entities.
+        Entities will be filtered to correspond to the site_id
+        passed, with the following:
+          - point and writable and cur and not equipRef
+
+        :param site_id: [str] site of interest
+        :return:
+        """
+        query = QC.get_read_write_site_points(site_id)
         response = requests.get(self.api_read_filter + query,
                                 headers=self.haystack_json_header)
         try:
@@ -317,8 +447,15 @@ class AlfalfaClient:
             readable_writable_site_points = []
         return readable_writable_site_points
 
+    # TODO: migrate to return hszinc.Grid
     def get_thermal_zones(self, site_id):
-        query = 'siteRef==@{} and zone'.format(site_id)
+        """
+        Return list of dictionary zone entities.
+
+        :param site_id: [str] site of interest
+        :return:
+        """
+        query = QC.get_thermal_zones(site_id)
         response = requests.get(self.api_read_filter + query,
                                 headers=self.haystack_json_header)
         try:
@@ -328,15 +465,18 @@ class AlfalfaClient:
             readable_writable_site_points = []
         return readable_writable_site_points
 
-    # Return a dictionary of the current input values
-    # result = {
-    # input_name1 : input_value1,
-    # input_name2 : input_value2
-    # }
     def inputs(self, site_id):
-        query = 'query { viewer { sites(siteRef: "%s") { points(writable: true) { dis tags { key value } } } } }' % (
-            site_id)
-        payload = {'query': query}
+        """
+        Return a dictionary of the current input values
+        result = {
+        input_name1 : input_value1,
+        input_name2 : input_value2
+        }
+
+        :param site_id: [str] site of interest
+        :return:
+        """
+        payload = {'query': QC.inputs(site_id)}
         response = requests.post(self.url + '/graphql', json=payload)
 
         j = json.loads(response.text)
@@ -354,3 +494,18 @@ class AlfalfaClient:
                     break
 
         return result
+
+    def query_points(self, site_id):
+        """
+        Get all points on the site
+        :param site_id: [str]
+        :return: [hszinc.Grid] if successful
+        """
+
+        query = QC.get_points(site_id)
+        response = requests.get(self.api_read_filter + query,
+                                headers=self.haystack_json_header)
+        if response.status_code == 200:
+            return hszinc.parse(response.content, mode=hszinc.MODE_JSON)
+        else:
+            raise requests.exceptions.ConnectionError
