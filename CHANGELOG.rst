@@ -1,7 +1,7 @@
 Change Log
 ==========
 
-v0.1.0-dev7 (unreleased)
+v0.1.0-pr1
 -----------
 Date: 2021-02-09
 
