@@ -7,6 +7,8 @@ Date: 2021-02-09
 
 * Fix externalClock bug
 * Update importlib-metadata to latest
+* external_clock argument must be a Boolean
+* pass datetime to the start
 
 v0.1.0-dev6
 -----------
