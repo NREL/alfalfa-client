@@ -1,9 +1,13 @@
 Change Log
 ==========
 
-v0.1.0-dev6 (unreleased)
+v0.1.0-dev7
 -----------
 * Update importlib-metadata to latest
+
+v0.1.0-dev6
+-----------
+Deleted from PyPi and untagged.
 
 v0.1.0-dev5
 ---------
