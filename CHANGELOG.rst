@@ -1,16 +1,20 @@
 Change Log
 ==========
 
-v0.1.0-beta.1
+v0.2.0-dev1 (Unreleased)
 -----------
 * Fix externalClock bug
 * Update importlib-metadata to latest
 * external_clock argument must be a Boolean
 * pass datetime to the start
 
-v0.1.0-dev6
+v0.1.0-dev7
 -----------
 * Update importlib-metadata to latest
+
+v0.1.0-dev6
+-----------
+Deleted from PyPi and untagged.
 
 v0.1.0-dev5
 ---------
