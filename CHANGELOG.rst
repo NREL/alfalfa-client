@@ -3,8 +3,6 @@ Change Log
 
 v0.1.0-beta.1
 -----------
-Date: 2021-02-09
-
 * Fix externalClock bug
 * Update importlib-metadata to latest
 * external_clock argument must be a Boolean
@@ -12,9 +10,7 @@ Date: 2021-02-09
 
 v0.1.0-dev6
 -----------
-Date: 2020-12-30
-
-* Ability to query points
+* Update importlib-metadata to latest
 
 v0.1.0-dev5
 ---------
