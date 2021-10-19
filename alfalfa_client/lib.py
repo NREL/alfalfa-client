@@ -160,7 +160,13 @@ def start_one(args):
     if "realtime" in kwargs:
         mutation = mutation + ', realtime: %s' % kwargs["realtime"]
     if "external_clock" in kwargs:
-        mutation = mutation + ', externalClock: %s' % kwargs["external_clock"]
+        # check if external_clock is bool, if so then convert to
+        # downcase string
+        v = kwargs["external_clock"]
+        if isinstance(v, bool):
+            v = 'true' if v else 'false'
+
+        mutation = mutation + ', externalClock: %s' % v.lower()
 
     mutation = mutation + ') }'
 
