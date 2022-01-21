@@ -1,6 +1,10 @@
 Change Log
 ==========
 
+v0.1.1
+------
+* Fix the exteralClock to allow passing either a boolean or a string
+
 v0.1.0-dev7
 -----------
 * Update importlib-metadata to latest
