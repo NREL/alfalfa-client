@@ -1,6 +1,10 @@
 Change Log
 ==========
 
+v0.2.0
+------
+* Rename endpoint from osmName to modelName. This is a breaking change.
+
 v0.1.1
 ------
 * Fix the exteralClock to allow passing either a boolean or a string
