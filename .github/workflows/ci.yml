@@ -10,18 +10,18 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v2
+      - name: Checkout code
+        uses: actions/checkout@v2
 
-    - name: Install Python
-      uses: actions/setup-python@v2
-      with:
-        python-version: '3.6'
+      - name: Install Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: "3.6"
 
-    - name: Run pre-commit
-      uses: pre-commit/action@v2.0.0
-      with:
-        extra_args: --all-files
+      - name: Run pre-commit
+        uses: pre-commit/action@v2.0.0
+        with:
+          extra_args: --all-files
   tests:
     name: Run tests
     runs-on: ubuntu-latest
@@ -33,12 +33,12 @@ jobs:
       - name: Install Python
         uses: actions/setup-python@v2
         with:
-          python-version: '3.6'
+          python-version: "3.6"
 
       - name: Install poetry
         uses: abatilo/actions-poetry@v2.0.0
         with:
-          poetry-version: '1.1.2'
+          poetry-version: "1.1.2"
 
       - name: Run tests with poetry and pytest
         run: |
