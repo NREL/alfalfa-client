@@ -1,9 +1,9 @@
 Change Log
 ==========
 
-v0.2.0
+v0.2.0 (Unreleased)
 ------
-* Rename endpoint from osmName to modelName. This is a breaking change.
+* Rename graphQL endpoint from osmName to modelName. This is a breaking change.
 
 v0.1.1
 ------
