@@ -28,13 +28,13 @@ OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ****************************************************************************************************
 """
 
-from collections import OrderedDict
-
 import json
 import os
-import requests
 import time
 import uuid
+from collections import OrderedDict
+
+import requests
 from requests_toolbelt import MultipartEncoder
 
 
