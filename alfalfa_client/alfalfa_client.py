@@ -28,12 +28,20 @@ OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ****************************************************************************************************
 """
 
+import json
 from multiprocessing import Pool
 
-import json
 import requests
 
-from alfalfa_client.lib import convert, process_haystack_rows, start_one, status, stop_one, submit_one, wait
+from alfalfa_client.lib import (
+    convert,
+    process_haystack_rows,
+    start_one,
+    status,
+    stop_one,
+    submit_one,
+    wait
+)
 
 
 class AlfalfaClient:
