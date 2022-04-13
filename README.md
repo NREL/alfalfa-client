@@ -45,4 +45,12 @@ See [this gist](https://gist.github.com/corymosiman12/26fb682df2d36b5c9155f344ec
 
 # Releasing
 
-See [release info here](https://gist.github.com/corymosiman12/26fb682df2d36b5c9155f344eccbe404#releasing)
+1. Merge all branches into develop, make sure tests pass
+1. Update the version (assume version is 0.1.2): `poetry version 0.1.2`
+1. Update the version test file (i.e. my-repo/tests/test_version.py) to match the above version
+1. Make sure tests pass: `poetry run tox`
+1. Merge develop into main (previously, master), make sure tests pass
+1. Create a tag: `git tag 0.1.2`
+1. Build: `poetry build`
+1. Publish `poetry publish` (this will push to pypi)
+1. Create a new release on the Github repository using the tag and link to PyPI
