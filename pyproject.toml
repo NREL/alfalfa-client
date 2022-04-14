@@ -8,7 +8,8 @@ authors = [
     'Cory Mosiman <cory.mosiman@nrel.gov>',
     'Nicholas Long <nicholas.long@nrel.gov>',
     'Willy Bernal <willy.bernalheredia@nrel.gov>',
-    'Yanfei Li <yanfei.li@nrel.gov>'
+    'Yanfei Li <yanfei.li@nrel.gov>',
+    'Tobias Shapinsky <tobias.shapinsky@nrel.gov>'
 ]
 readme = 'README.md'
 license = 'LICENSE.txt'
