@@ -28,13 +28,13 @@ OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ****************************************************************************************************
 """
 
-from collections import OrderedDict
-
 import json
 import os
-import requests
 import time
 import uuid
+from collections import OrderedDict
+
+import requests
 from requests_toolbelt import MultipartEncoder
 
 
@@ -131,7 +131,7 @@ def submit_one(args):
 
     # After the file has been uploaded, then tell BOPTEST to process the site
     # This is done not via the haystack api, but through a graphql api
-    mutation = 'mutation { addSite(osmName: "%s", uploadID: "%s") }' % (filename, uid)
+    mutation = 'mutation { addSite(modelName: "%s", uploadID: "%s") }' % (filename, uid)
     for _ in range(3):
         response = requests.post(url + '/graphql', json={'query': mutation})
         if response.status_code == 200:
