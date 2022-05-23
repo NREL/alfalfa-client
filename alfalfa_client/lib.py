@@ -59,10 +59,10 @@ def convert_all(values):
     return v2
 
 
-def status(url, siteref):
+def status(url, run_id):
     status = ''
 
-    query = '{ viewer{ sites(siteRef: "%s") { simStatus } } }' % siteref
+    query = '{ viewer{ runs(run_id: "%s") { status } } }' % run_id
     for i in range(3):
         response = requests.post(url + '/graphql', json={'query': query})
         if response.status_code == 200:
@@ -71,9 +71,9 @@ def status(url, siteref):
         print("Could not get status")
 
     j = json.loads(response.text)
-    sites = j["data"]["viewer"]["sites"]
-    if sites:
-        status = sites[0]["simStatus"]
+    runs = j["data"]["viewer"]["runs"]
+    if runs:
+        status = runs[0]["status"]
 
     return status
 
@@ -139,7 +139,7 @@ def submit_one(args):
     if response.status_code != 200:
         print("Could not addSite")
 
-    wait(url, uid, "Stopped")
+    wait(url, uid, "READY")
 
     return uid
 
@@ -178,7 +178,7 @@ def start_one(args):
             print("Start one status code: {}".format(response.status_code))
             print(f"start_one error: {response.content}")
 
-    wait(url, site_id, "Running")
+    wait(url, site_id, "RUNNING")
 
 
 def stop_one(args):
@@ -189,7 +189,7 @@ def stop_one(args):
     payload = {'query': mutation}
     requests.post(url + '/graphql', json=payload)
 
-    wait(url, site_id, "Stopped")
+    wait(url, site_id, "COMPLETE")
 
 
 # Grab only the 'rows' out of a Haystack JSON response.
