@@ -73,7 +73,7 @@ def status(url, run_id):
     j = json.loads(response.text)
     runs = j["data"]["viewer"]["runs"]
     if runs:
-        status = runs[0]["status"]
+        status = runs["status"]
 
     return status
 
