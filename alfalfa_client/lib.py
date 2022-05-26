@@ -77,14 +77,35 @@ def status(url, run_id):
 
     return status
 
+def get_error_log(url, run_id):
+    error_log = ''
 
-def wait(url, siteref, desired_status):
+    query = '{ viewer{ runs(run_id: "%s") { error_log } } }' % run_id
+    for i in range(3):
+        response = requests.post(url + '/graphql', json={'query': query})
+        if response.status_code == 200:
+            break
+    if response.status_code != 200:
+        print("Could not get error log")
+
+    j = json.loads(response.text)
+    runs = j["data"]["viewer"]["runs"]
+    if runs:
+        error_log = runs["error_log"]
+
+    return error_log
+
+def wait(url, run_id, desired_status):
     pass
 
     attempts = 0
     while attempts < 6000:
         attempts = attempts + 1
-        current_status = status(url, siteref)
+        current_status = status(url, run_id)
+
+        if current_status == "ERROR":
+            error_log = get_error_log(url, run_id)
+            raise AlfalfaException(error_log)
 
         if desired_status:
             if attempts % 2 == 0:
@@ -197,3 +218,6 @@ def stop_one(args):
 # If no 'rows' exist, return empty list
 def process_haystack_rows(haystack_json_response):
     return haystack_json_response.get('rows', [])
+
+class AlfalfaException(Exception):
+    """Wrapper for exceptions which come from alfalfa"""
