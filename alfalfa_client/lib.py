@@ -77,6 +77,7 @@ def status(url, siteref):
 
     return status
 
+
 def get_error_log(url, run_id):
     error_log = ''
 
@@ -94,6 +95,7 @@ def get_error_log(url, run_id):
         error_log = runs["error_log"]
 
     return error_log
+
 
 def wait(url, siteref, desired_status):
     pass
@@ -218,6 +220,7 @@ def stop_one(args):
 # If no 'rows' exist, return empty list
 def process_haystack_rows(haystack_json_response):
     return haystack_json_response.get('rows', [])
+
 
 class AlfalfaException(Exception):
     """Wrapper for exceptions which come from alfalfa"""
