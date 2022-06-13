@@ -77,6 +77,23 @@ def status(url, siteref):
 
     return status
 
+def get_error_log(url, run_id):
+    error_log = ''
+
+    query = '{ viewer{ runs(run_id: "%s") { error_log } } }' % run_id
+    for i in range(3):
+        response = requests.post(url + '/graphql', json={'query': query})
+        if response.status_code == 200:
+            break
+    if response.status_code != 200:
+        print("Could not get error log")
+
+    j = json.loads(response.text)
+    runs = j["data"]["viewer"]["runs"]
+    if runs:
+        error_log = runs["error_log"]
+
+    return error_log
 
 def wait(url, siteref, desired_status):
     pass
@@ -85,6 +102,10 @@ def wait(url, siteref, desired_status):
     while attempts < 6000:
         attempts = attempts + 1
         current_status = status(url, siteref)
+
+        if current_status == "ERROR":
+            error_log = get_error_log(url, siteref)
+            raise AlfalfaException(error_log)
 
         if desired_status:
             if attempts % 2 == 0:
@@ -139,7 +160,7 @@ def submit_one(args):
     if response.status_code != 200:
         print("Could not addSite")
 
-    wait(url, uid, "Stopped")
+    wait(url, uid, "READY")
 
     return uid
 
@@ -178,7 +199,7 @@ def start_one(args):
             print("Start one status code: {}".format(response.status_code))
             print(f"start_one error: {response.content}")
 
-    wait(url, site_id, "Running")
+    wait(url, site_id, "RUNNING")
 
 
 def stop_one(args):
@@ -189,7 +210,7 @@ def stop_one(args):
     payload = {'query': mutation}
     requests.post(url + '/graphql', json=payload)
 
-    wait(url, site_id, "Stopped")
+    wait(url, site_id, "COMPLETE")
 
 
 # Grab only the 'rows' out of a Haystack JSON response.
@@ -197,3 +218,6 @@ def stop_one(args):
 # If no 'rows' exist, return empty list
 def process_haystack_rows(haystack_json_response):
     return haystack_json_response.get('rows', [])
+
+class AlfalfaException(Exception):
+    """Wrapper for exceptions which come from alfalfa"""
