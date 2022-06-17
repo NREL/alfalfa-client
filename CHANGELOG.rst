@@ -1,7 +1,16 @@
 Change Log
 ==========
 
-v0.2.0 (Unreleased)
+v0.3.0
+------
+* Upgrade dependencies
+* Release for Alfalfa 0.3.0
+
+v0.2.1
+------
+* Upgrade dependencies to increase compatibility with python 3.7+
+
+v0.2.0
 ------
 * Rename graphQL endpoint from osmName to modelName. This is a breaking change.
 

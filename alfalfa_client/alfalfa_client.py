@@ -212,12 +212,12 @@ class AlfalfaClient:
     # Return the current time, as understood by the simulation
     # result = String(%Y-%m-%dT%H:%M:%S)
     def get_sim_time(self, site_id):
-        query = 'query { viewer { sites(siteRef: "%s") { datetime } } }' % (site_id)
+        query = 'query { viewer { runs(run_id: "%s") { sim_time } } }' % (site_id)
         payload = {'query': query}
         response = requests.post(self.url + '/graphql', json=payload)
 
         j = json.loads(response.text)
-        dt = j["data"]["viewer"]["sites"][0]["datetime"]
+        dt = j["data"]["viewer"]["runs"]["sim_time"]
         return dt
 
     # Return a list of all the points in the model which
