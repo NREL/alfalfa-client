@@ -174,22 +174,22 @@ def start_one(args):
 
     mutation = 'mutation { runSite(siteRef: "%s"' % site_id
 
-    if "timescale" in kwargs:
-        mutation = mutation + ', timescale: %s' % kwargs["timescale"]
+    mutation = mutation + ', timescale: %s' % kwargs.get("timescale", 5)
+
     if "start_datetime" in kwargs:
         mutation = mutation + ', startDatetime: "%s"' % kwargs["start_datetime"]
     if "end_datetime" in kwargs:
         mutation = mutation + ', endDatetime: "%s"' % kwargs["end_datetime"]
-    if "realtime" in kwargs:
-        mutation = mutation + ', realtime: %s' % kwargs["realtime"]
-    if "external_clock" in kwargs:
-        # check if external_clock is bool, if so then convert to
-        # downcase string
-        v = kwargs["external_clock"]
-        if isinstance(v, bool):
-            v = 'true' if v else 'false'
 
-        mutation = mutation + ', externalClock: %s' % v.lower()
+    mutation = mutation + ', realtime: %s' % kwargs.get("realtime", "false")
+
+    # check if external_clock is bool, if so then convert to
+    # downcase string
+    v = kwargs.get("external_clock", "false")
+    if isinstance(v, bool):
+        v = 'true' if v else 'false'
+
+    mutation = mutation + ', externalClock: %s' % v.lower()
 
     mutation = mutation + ') }'
 
