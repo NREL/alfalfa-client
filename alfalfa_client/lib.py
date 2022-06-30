@@ -176,12 +176,16 @@ def start_one(args):
 
     if "timescale" in kwargs:
         mutation = mutation + ', timescale: %s' % kwargs["timescale"]
+    else:
+        mutation = mutation + ', timescale: 5'
     if "start_datetime" in kwargs:
         mutation = mutation + ', startDatetime: "%s"' % kwargs["start_datetime"]
     if "end_datetime" in kwargs:
         mutation = mutation + ', endDatetime: "%s"' % kwargs["end_datetime"]
     if "realtime" in kwargs:
         mutation = mutation + ', realtime: %s' % kwargs["realtime"]
+    else:
+        mutation = mutation + ', realtime: false'
     if "external_clock" in kwargs:
         # check if external_clock is bool, if so then convert to
         # downcase string
@@ -190,6 +194,8 @@ def start_one(args):
             v = 'true' if v else 'false'
 
         mutation = mutation + ', externalClock: %s' % v.lower()
+    else:
+        mutation = mutation + ', externalClock: false'
 
     mutation = mutation + ') }'
 
