@@ -155,16 +155,18 @@ def submit_one(args):
     # After the file has been uploaded, then tell BOPTEST to process the site
     # This is done not via the haystack api, but through a graphql api
     mutation = 'mutation { addSite(modelName: "%s", uploadID: "%s") }' % (filename, uid)
+    run_id = None
     for _ in range(3):
         response = requests.post(url + '/graphql', json={'query': mutation})
         if response.status_code == 200:
+            run_id = response.json()['data']['addSite']
             break
     if response.status_code != 200:
         print("Could not addSite")
 
-    wait(url, uid, "READY")
+    wait(url, run_id, "READY")
 
-    return uid
+    return run_id
 
 
 def start_one(args):
