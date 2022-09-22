@@ -28,7 +28,6 @@ OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ****************************************************************************************************
 """
 
-import json
 import os
 import time
 import uuid
@@ -70,7 +69,7 @@ def status(url, run_id):
     if response.status_code != 200:
         print("Could not get status")
 
-    j = json.loads(response.text)
+    j = response.json()
     runs = j["data"]["viewer"]["runs"]
     if runs:
         status = runs["status"]
@@ -89,7 +88,7 @@ def get_error_log(url, run_id):
     if response.status_code != 200:
         print("Could not get error log")
 
-    j = json.loads(response.text)
+    j = response.json()
     runs = j["data"]["viewer"]["runs"]
     if runs:
         error_log = runs["error_log"]
