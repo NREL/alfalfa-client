@@ -28,7 +28,6 @@ OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ****************************************************************************************************
 """
 
-import json
 from multiprocessing import Pool
 
 import requests
@@ -154,7 +153,7 @@ class AlfalfaClient:
         payload = {'query': query}
         response = requests.post(self.url + '/graphql', json=payload)
 
-        j = json.loads(response.text)
+        j = response.json()
         points = j["data"]["viewer"]["sites"][0]["points"]
         result = {}
 
@@ -176,7 +175,7 @@ class AlfalfaClient:
         payload = {'query': query}
         response = requests.post(self.url + '/graphql', json=payload)
 
-        j = json.loads(response.text)
+        j = response.json()
         points = j["data"]["viewer"]["sites"][0]["points"]
         result = []
 
@@ -196,7 +195,7 @@ class AlfalfaClient:
         payload = {'query': query}
         response = requests.post(self.url + '/graphql', json=payload)
 
-        j = json.loads(response.text)
+        j = response.json()
         points = j["data"]["viewer"]["sites"][0]["points"]
         result = {}
 
@@ -216,7 +215,7 @@ class AlfalfaClient:
         payload = {'query': query}
         response = requests.post(self.url + '/graphql', json=payload)
 
-        j = json.loads(response.text)
+        j = response.json()
         dt = j["data"]["viewer"]["runs"]["sim_time"]
         return dt
 
@@ -229,7 +228,7 @@ class AlfalfaClient:
         payload = {'query': query}
         response = requests.post(self.url + '/graphql', json=payload)
 
-        j = json.loads(response.text)
+        j = response.json()
         points = j["data"]["viewer"]["sites"][0]["points"]
         result = []
 
@@ -247,7 +246,7 @@ class AlfalfaClient:
         payload = {'query': query}
         response = requests.post(self.url + '/graphql', json=payload)
 
-        j = json.loads(response.text)
+        j = response.json()
         points = j["data"]["viewer"]["sites"][0]["points"]
         result = []
 
@@ -323,7 +322,7 @@ class AlfalfaClient:
         payload = {'query': query}
         response = requests.post(self.url + '/graphql', json=payload)
 
-        j = json.loads(response.text)
+        j = response.json()
         points = j["data"]["viewer"]["sites"][0]["points"]
         result = {}
 

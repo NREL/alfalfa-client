@@ -28,7 +28,6 @@ OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ****************************************************************************************************
 """
 
-import json
 import os
 import time
 import uuid
@@ -70,7 +69,7 @@ def status(url, run_id):
     if response.status_code != 200:
         print("Could not get status")
 
-    j = json.loads(response.text)
+    j = response.json()
     runs = j["data"]["viewer"]["runs"]
     if runs:
         status = runs["status"]
@@ -89,7 +88,7 @@ def get_error_log(url, run_id):
     if response.status_code != 200:
         print("Could not get error log")
 
-    j = json.loads(response.text)
+    j = response.json()
     runs = j["data"]["viewer"]["runs"]
     if runs:
         error_log = runs["error_log"]
@@ -155,16 +154,18 @@ def submit_one(args):
     # After the file has been uploaded, then tell BOPTEST to process the site
     # This is done not via the haystack api, but through a graphql api
     mutation = 'mutation { addSite(modelName: "%s", uploadID: "%s") }' % (filename, uid)
+    run_id = None
     for _ in range(3):
         response = requests.post(url + '/graphql', json={'query': mutation})
         if response.status_code == 200:
+            run_id = response.json()['data']['addSite']
             break
     if response.status_code != 200:
         print("Could not addSite")
 
-    wait(url, uid, "READY")
+    wait(url, run_id, "READY")
 
-    return uid
+    return run_id
 
 
 def start_one(args):
