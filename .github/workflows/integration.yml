@@ -4,6 +4,8 @@ on:
   push:
     branches:
       - 'develop'
+  pull_request:
+    types: [opened, edited]
   repository_dispatch:
     types: [alfalfa-update]
 
