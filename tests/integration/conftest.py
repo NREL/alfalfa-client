@@ -1,9 +1,11 @@
 import os
-from pathlib import Path
 import shutil
 import tempfile
-from datetime import datetime, timedelta
+from datetime import datetime
+from pathlib import Path
+
 import pytest
+
 from alfalfa_client.alfalfa_client import AlfalfaClient
 
 
@@ -24,9 +26,11 @@ def create_zip(model_dir):
 
     return zip_file_path
 
+
 @pytest.fixture
 def client():
     yield AlfalfaClient('http://localhost')
+
 
 @pytest.fixture
 def run_id(client: AlfalfaClient, model_path: Path):
@@ -38,13 +42,16 @@ def run_id(client: AlfalfaClient, model_path: Path):
     if status == "RUNNING":
         client.stop(run_id)
 
+
 @pytest.fixture
 def start_datetime():
-    yield datetime(2020,1,1,0,0)
+    yield datetime(2020, 1, 1, 0, 0)
+
 
 @pytest.fixture
 def end_datetime():
-    yield datetime(2020,1,1,0,5)
+    yield datetime(2020, 1, 1, 0, 5)
+
 
 @pytest.fixture
 def internal_clock_run_id(client: AlfalfaClient, run_id: str, start_datetime: datetime, end_datetime: datetime):
@@ -56,6 +63,7 @@ def internal_clock_run_id(client: AlfalfaClient, run_id: str, start_datetime: da
     }
     client.start(run_id, **params)
     yield run_id
+
 
 @pytest.fixture
 def external_clock_run_id(client: AlfalfaClient, run_id: str, start_datetime: datetime, end_datetime: datetime):
