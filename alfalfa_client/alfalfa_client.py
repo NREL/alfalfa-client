@@ -334,3 +334,16 @@ class AlfalfaClient:
                     break
 
         return result
+
+    def get_aliases(self):
+        response = requests.get(self.url + '/api/v2/aliases')
+
+        return response.json()
+
+    def get_alias(self, alias_name: str):
+        response = requests.get(self.url + '/api/v2/aliases/' + alias_name)
+        j = response.json()
+        return j["ref_id"]
+
+    def set_alias(self, alias_name: str, site_ref: str):
+        requests.put(self.url + '/api/v2/aliases/' + alias_name, json={'ref_id': site_ref})
