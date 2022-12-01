@@ -252,7 +252,7 @@ class AlfalfaClient:
         payload = {'query': query}
         response = requests.post(self.host + '/graphql', json=payload)
 
-        j = json.loads(response.text)
+        j = response.json()
         points = j["data"]["viewer"]["sites"][0]["points"]
         result = {}
 
@@ -274,7 +274,7 @@ class AlfalfaClient:
         payload = {'query': query}
         response = requests.post(self.host + '/graphql', json=payload)
 
-        j = json.loads(response.text)
+        j = response.json()
         points = j["data"]["viewer"]["sites"][0]["points"]
         result = []
 
@@ -294,7 +294,7 @@ class AlfalfaClient:
         payload = {'query': query}
         response = requests.post(self.host + '/graphql', json=payload)
 
-        j = json.loads(response.text)
+        j = response.json()
         points = j["data"]["viewer"]["sites"][0]["points"]
         result = {}
 
@@ -314,7 +314,7 @@ class AlfalfaClient:
         payload = {'query': query}
         response = requests.post(self.host + '/graphql', json=payload)
 
-        j = json.loads(response.text)
+        j = response.json()
         dt = j["data"]["viewer"]["runs"]["sim_time"]
         return dt
 
@@ -327,7 +327,7 @@ class AlfalfaClient:
         payload = {'query': query}
         response = requests.post(self.host + '/graphql', json=payload)
 
-        j = json.loads(response.text)
+        j = response.json()
         points = j["data"]["viewer"]["sites"][0]["points"]
         result = []
 
@@ -345,7 +345,7 @@ class AlfalfaClient:
         payload = {'query': query}
         response = requests.post(self.host + '/graphql', json=payload)
 
-        j = json.loads(response.text)
+        j = response.json()
         points = j["data"]["viewer"]["sites"][0]["points"]
         result = []
 
@@ -421,7 +421,7 @@ class AlfalfaClient:
         payload = {'query': query}
         response = requests.post(self.host + '/graphql', json=payload)
 
-        j = json.loads(response.text)
+        j = response.json()
         points = j["data"]["viewer"]["sites"][0]["points"]
         result = {}
 
