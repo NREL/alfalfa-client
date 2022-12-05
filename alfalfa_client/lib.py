@@ -28,17 +28,35 @@ OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ****************************************************************************************************
 """
 
-from datetime import datetime
-import json
-from numbers import Number
-import os
-import time
-from typing import Union
-import uuid
-from collections import OrderedDict
+import concurrent.futures
+import functools
+import shutil
+import tempfile
+from functools import partial
+from pathlib import Path
+from typing import List
 
-import requests
-from requests_toolbelt import MultipartEncoder
+
+def parallelize(func):
+
+    def parallel_call(func, iter_vals: List, args: List = [], kwargs: dict = {}):
+        responses = [None] * len(iter_vals)
+        with concurrent.futures.ThreadPoolExecutor() as executor:
+            future_to_index = {executor.submit(func, iter_vals[i], *args, **kwargs): i for i in range(len(iter_vals))}
+            for future in concurrent.futures.as_completed(future_to_index):
+                arg = future_to_index[future]
+
+                responses[arg] = future.result()
+        return responses
+
+    @functools.wraps(func)
+    def parallel_wrapper(self, val, *args, **kwargs):
+        if isinstance(val, list):
+            return parallel_call(partial(func, self), val, args, kwargs)
+        else:
+            return func(self, val, *args, **kwargs)
+
+    return parallel_wrapper
 
 
 # remove any hastack type info from value and convert numeric strings
@@ -62,169 +80,33 @@ def convert_all(values):
     return v2
 
 
-def status(url, run_id):
-    status = ''
+def create_zip(model_dir):
+    zip_file_fd, zip_file_path = tempfile.mkstemp(suffix='.zip')
+    zip_file_path = Path(zip_file_path)
+    shutil.make_archive(zip_file_path.parent / zip_file_path.stem, "zip", model_dir)
 
-    query = '{ viewer{ runs(run_id: "%s") { status } } }' % run_id
-    for i in range(3):
-        response = requests.post(url + '/graphql', json={'query': query})
-        if response.status_code == 200:
-            break
-    if response.status_code != 200:
-        print("Could not get status")
-
-    j = response.json()
-    runs = j["data"]["viewer"]["runs"]
-    if runs:
-        status = runs["status"]
-
-    return status
+    return zip_file_path
 
 
-def get_error_log(url, run_id):
-    error_log = ''
-
-    query = '{ viewer{ runs(run_id: "%s") { error_log } } }' % run_id
-    for i in range(3):
-        response = requests.post(url + '/graphql', json={'query': query})
-        if response.status_code == 200:
-            break
-    if response.status_code != 200:
-        print("Could not get error log")
-
-    j = response.json()
-    runs = j["data"]["viewer"]["runs"]
-    if runs:
-        error_log = runs["error_log"]
-
-    return error_log
-
-
-def wait(url, run_id, desired_status):
-
-    attempts = 0
-    while attempts < 6000:
-        attempts = attempts + 1
-        current_status = status(url, run_id)
-
-        if current_status == "ERROR":
-            error_log = get_error_log(url, run_id)
-            raise AlfalfaException(error_log)
-
-        if desired_status:
-            if attempts % 2 == 0:
-                print("Desired status: {}\t\tCurrent status: {}".format(desired_status, current_status))
-            if current_status == desired_status:
-                break
-        elif current_status:
-            break
-        time.sleep(2)
-
-
-def submit_one(args):
-    url = args["url"]
-    path = args["path"]
-
-    filename = os.path.basename(path)
-    uid = str(uuid.uuid1())
-
-    key = 'uploads/' + uid + '/' + filename
-    payload = {'name': key}
-
-    # Get a template for the file upload form data
-    # The server has an api to give this to us
-    for i in range(3):
-        response = requests.post(url + '/upload-url', json=payload)
-        if response.status_code == 200:
-            break
-    if response.status_code != 200:
-        print("Could not get upload-url")
-
-    json = response.json()
-    postURL = json['url']
-    formData = OrderedDict(json['fields'])
-    formData['file'] = ('filename', open(path, 'rb'))
-
-    # Use the form data from the server to actually upload the file
-    encoder = MultipartEncoder(fields=formData)
-    for _ in range(3):
-        response = requests.post(postURL, data=encoder, headers={'Content-Type': encoder.content_type})
-        if response.status_code == 204:
-            break
-    if response.status_code != 204:
-        print("Could not post file")
-
-    # After the file has been uploaded, then tell BOPTEST to process the site
-    # This is done not via the haystack api, but through a graphql api
-    mutation = 'mutation { addSite(modelName: "%s", uploadID: "%s") }' % (filename, uid)
-    run_id = None
-    for _ in range(3):
-        response = requests.post(url + '/graphql', json={'query': mutation})
-        if response.status_code == 200:
-            run_id = response.json()['data']['addSite']
-            break
-    if response.status_code != 200:
-        print("Could not addSite")
-
-    wait(url, run_id, "READY")
-
-    return run_id
-
-
-def start_one(args):
-    url = args["url"]
-    site_id = args["site_id"]
-    kwargs = args["kwargs"]
-
-    mutation = 'mutation { runSite(siteRef: "%s"' % site_id
-
-    mutation = mutation + ', timescale: %s' % kwargs.get("timescale", 5)
-
-    if "start_datetime" in kwargs:
-        mutation = mutation + ', startDatetime: "%s"' % kwargs["start_datetime"]
-    if "end_datetime" in kwargs:
-        mutation = mutation + ', endDatetime: "%s"' % kwargs["end_datetime"]
-
-    mutation = mutation + ', realtime: %s' % kwargs.get("realtime", "false")
-
-    # check if external_clock is bool, if so then convert to
-    # downcase string
-    v = kwargs.get("external_clock", "false")
-    if isinstance(v, bool):
-        v = 'true' if v else 'false'
-
-    mutation = mutation + ', externalClock: %s' % v.lower()
-
-    mutation = mutation + ') }'
-
-    for _ in range(3):
-        response = requests.post(url + '/graphql', json={'query': mutation})
-        if response.status_code == 200:
-            break
-        else:
-            print("Start one status code: {}".format(response.status_code))
-            print(f"start_one error: {response.content}")
-
-    wait(url, site_id, "RUNNING")
-
-
-def stop_one(args):
-    url = args["url"]
-    site_id = args["site_id"]
-
-    mutation = 'mutation { stopSite(siteRef: "%s") }' % (site_id)
-    payload = {'query': mutation}
-    requests.post(url + '/graphql', json=payload)
-
-    wait(url, site_id, "COMPLETE")
-
-
-# Grab only the 'rows' out of a Haystack JSON response.
-# Return a list of dictionary entities.
-# If no 'rows' exist, return empty list
-def process_haystack_rows(haystack_json_response):
-    return haystack_json_response.get('rows', [])
+def prepare_model(model_path):
+    model_path = Path(model_path)
+    if (model_path).is_dir():
+        return create_zip(str(model_path.absolute()))
+    else:
+        return str(model_path.absolute())
 
 
 class AlfalfaException(Exception):
     """Wrapper for exceptions which come from alfalfa"""
+
+
+class AlfalfaWorkerException(AlfalfaException):
+    """Wrapper for exceptions from the alfalfa worker"""
+
+
+class AlfalfaAPIException(AlfalfaException):
+    """Wrapper for API errors"""
+
+
+class AlfalfaClientExcpetion(AlfalfaException):
+    """Wrapper for exceptions in client operation"""

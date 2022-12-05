@@ -30,4 +30,6 @@ OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 import pkg_resources
 
+from alfalfa_client.alfalfa_client import AlfalfaClient
+
 __version__ = pkg_resources.get_distribution('alfalfa-client').version
