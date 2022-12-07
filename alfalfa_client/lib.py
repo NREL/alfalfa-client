@@ -59,27 +59,6 @@ def parallelize(func):
     return parallel_wrapper
 
 
-# remove any hastack type info from value and convert numeric strings
-# to python float. ie s: maps to python string n: maps to python float,
-# other values are simply returned unchanged, thus retaining any haystack type prefix
-def convert(value):
-    if value[0:2] == 's:':
-        return value[2:]
-    elif value[0:2] == 'n:':
-        return float(value[2:])
-    else:
-        return value
-
-
-# Remove haystack type info (s: and n: ONLY) from a list of strings.
-# Return list
-def convert_all(values):
-    v2 = []
-    for v in values:
-        v2.append(convert(v))
-    return v2
-
-
 def create_zip(model_dir):
     zip_file_fd, zip_file_path = tempfile.mkstemp(suffix='.zip')
     zip_file_path = Path(zip_file_path)

@@ -112,7 +112,7 @@ class AlfalfaClient:
         return response["data"]["errorLog"]
 
     @parallelize
-    def wait(self, site_id: Union[SiteID, List[SiteID]], desired_status: str, timeout: float = 60) -> None:
+    def wait(self, site_id: Union[SiteID, List[SiteID]], desired_status: str, timeout: float = 600) -> None:
         """Wait for a site to have a certain status or timeout with error
 
         :param site_id: id of site or list of ids
