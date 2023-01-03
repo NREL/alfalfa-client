@@ -1,6 +1,14 @@
 Change Log
 ==========
 
+v0.4.1
+------
+* Drop support for Python 3.7
+
+v0.4.0
+------
+* Release for Alfalfa 0.4.0
+
 v0.3.0
 ------
 * Upgrade dependencies
