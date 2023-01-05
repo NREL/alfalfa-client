@@ -67,10 +67,10 @@ def create_zip(model_dir):
     return zip_file_path
 
 
-def prepare_model(model_path):
+def prepare_model(model_path) -> str:
     model_path = Path(model_path)
     if (model_path).is_dir():
-        return create_zip(str(model_path.absolute()))
+        return str(create_zip(str(model_path.absolute())))
     else:
         return str(model_path.absolute())
 

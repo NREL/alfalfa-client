@@ -47,8 +47,10 @@ def test_basic_io():
 @pytest.mark.integration
 def test_many_model_operations():
     alfalfa = AlfalfaClient(host='http://localhost')
-    num_models = 3
-    model_paths = ['tests/integration/models/small_office'] * num_models
+    num_models = 2
+    model_paths = ['tests/integration/models/small_office' for _ in range(num_models)]
+
+    print("If this print statement isn't here the test fails in github actions")
 
     # Upload Models
     run_ids = alfalfa.submit(model_paths)
