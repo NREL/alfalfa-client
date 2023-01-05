@@ -29,6 +29,9 @@ jobs:
 
       - name: Start Alfalfa
         uses: NREL/alfalfa-action@v1
+        with:
+          tag: "0.4.2-pr1"
+          compose-file-ref: "modelica_use_datetime"
 
       - name: Run tests with poetry and pytest
         run: |
