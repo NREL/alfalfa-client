@@ -37,7 +37,7 @@ class TestAlfalfaClient:
     def test_instantiation(self):
         client = ac.AlfalfaClient()
         assert client is not None
-        assert client.url == 'http://localhost'
+        assert client.url == 'http://localhost/api/v2/'
 
 
 class TestHistorian:

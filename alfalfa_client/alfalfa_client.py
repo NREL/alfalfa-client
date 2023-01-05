@@ -28,309 +28,271 @@ OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ****************************************************************************************************
 """
 
-from multiprocessing import Pool
+import json
+import os
+from collections import OrderedDict
+from datetime import datetime
+from numbers import Number
+from time import sleep, time
+from typing import List, Union
+from urllib.parse import urljoin
 
 import requests
+from requests.exceptions import HTTPError
+from requests_toolbelt import MultipartEncoder
 
 from alfalfa_client.lib import (
-    convert,
-    process_haystack_rows,
-    start_one,
-    status,
-    stop_one,
-    submit_one,
-    wait
+    AlfalfaAPIException,
+    AlfalfaClientExcpetion,
+    AlfalfaException,
+    parallelize,
+    prepare_model
 )
+
+ModelID = str
+SiteID = str
 
 
 class AlfalfaClient:
 
-    # The url argument is the address of the Alfalfa server
-    # default should be http://localhost/api
-    def __init__(self, url='http://localhost'):
-        self.url = url
-        self.haystack_filter = self.url + '/api/read?filter='
+    def __init__(self, host: str = 'http://localhost', api_version: str = 'v2'):
+        """Create a new alfalfa client instance
+
+        :param host: url for host of alfalfa web server
+        :param api_version: version of alfalfa api to use (probably don't change this)
+        """
+        self.host = host.lstrip('/')
+        self.haystack_filter = self.host + '/api/read?filter='
         self.haystack_json_header = {
             'Content-Type': 'application/json',
             'Accept': 'application/json'
         }
-        self.readable_site_points = None  # Populated by get_read_site_points
-        self.writable_site_points = None  # Populated by get_write_site_points
-        self.readable_writable_site_points = None  # Populated by get_read_write_site_points
 
-    def status(self, siteref):
-        return status(self.url, siteref)
+        self.host = host
+        self.api_version = api_version
 
-    def wait(self, siteref, desired_status):
-        return wait(self.url, siteref, desired_status)
+    @property
+    def url(self):
+        return urljoin(self.host, f"api/{self.api_version}/")
 
-    def submit(self, path):
-        args = {"url": self.url, "path": path}
-        return submit_one(args)
+    def _request(self, endpoint: str, method="POST", parameters=None) -> requests.Response:
+        if parameters:
+            response = requests.request(method=method, url=self.url + endpoint, json=parameters, headers={"Content-Type": "application/json"})
+        else:
+            response = requests.request(method=method, url=self.url + endpoint)
 
-    def submit_many(self, paths):
-        args = []
-        for path in paths:
-            args.append({"url": self.url, "path": path})
-        p = Pool(10)
-        result = p.map(submit_one, args)
-        p.close()
-        p.join()
-        return result
+        if response.status_code == 400:
+            try:
+                body = response.json()
+                raise AlfalfaAPIException(body["error"])
+            except json.JSONDecodeError:
+                pass
+        response.raise_for_status()
 
-    def start(self, site_id, **kwargs):
-        args = {"url": self.url, "site_id": site_id, "kwargs": kwargs}
-        return start_one(args)
+        return response
 
-    # Start a simulation for model identified by id. The id should corrsespond to
-    # a return value from the submit method
-    # kwargs are timescale, start_datetime, end_datetime, realtime, external_clock
-    def start_many(self, site_ids, **kwargs):
-        args = []
-        for site_id in site_ids:
-            args.append({"url": self.url, "site_id": site_id, "kwargs": kwargs})
-        p = Pool(10)
-        result = p.map(start_one, args)
-        p.close()
-        p.join()
-        return result
+    @parallelize
+    def status(self, site_id: Union[SiteID, List[SiteID]]) -> str:
+        """Get status of site
 
-    def advance(self, site_ids):
-        ids = ', '.join('"{0}"'.format(s) for s in site_ids)
-        mutation = 'mutation { advance(siteRefs: [%s]) }' % (ids)
-        payload = {'query': mutation}
-        requests.post(self.url + '/graphql', json=payload)
+        :param site_id: id of site or list of ids
+        :returns: status of site
+        """
+        response = self._request(f"sites/{site_id}", method="GET").json()
+        return response["data"]["status"]
 
-    def stop(self, site_id):
-        args = {"url": self.url, "site_id": site_id}
-        return stop_one(args)
+    @parallelize
+    def get_error_log(self, site_id: Union[SiteID, List[SiteID]]) -> str:
+        """Get error log from site
 
-    # Stop a simulation for model identified by id
-    def stop_many(self, site_ids):
-        args = []
-        for site_id in site_ids:
-            args.append({"url": self.url, "site_id": site_id})
-        p = Pool(10)
-        result = p.map(stop_one, args)
-        p.close()
-        p.join()
-        return result
+        :param site_id: id of site or list of ids
+        :returns: error log from site
+        """
+        response = self._request(f"sites/{site_id}", method="GET").json()
+        return response["data"]["errorLog"]
 
-    # TODO remove a site for model identified by id
-    # def remove(self, id):
-    #    mutation = 'mutation { removeSite(siteRef: "%s") }' % (id)
+    @parallelize
+    def wait(self, site_id: Union[SiteID, List[SiteID]], desired_status: str, timeout: float = 600) -> None:
+        """Wait for a site to have a certain status or timeout with error
 
-    #    payload = {'query': mutation}
+        :param site_id: id of site or list of ids
+        :param desired_status: status to wait for
+        :param timeout: timeout length in seconds
+        """
 
-    #    response = requests.post(self.url + '/graphql', json=payload )
-    #    print('remove site API response: \n')
-    # print(response.text)
-    #
+        start_time = time()
+        previous_status = None
+        current_status = None
+        while time() - timeout < start_time:
+            try:
+                current_status = self.status(site_id)
+            except HTTPError as e:
+                if e.response.status_code != 404:
+                    raise e
 
-    # Set inputs for model identified by display name
-    # The inputs argument should be a dictionary of
-    # with the form
-    # inputs = {
-    #  input_name: value1,
-    #  input_name2: value2
-    # }
-    def setInputs(self, site_id, inputs):
-        for key, value in inputs.items():
-            if value or (value == 0):
-                mutation = 'mutation { writePoint(siteRef: "%s", pointName: "%s", value: %s, level: 1 ) }' % (
-                    site_id, key, value)
-            else:
-                mutation = 'mutation { writePoint(siteRef: "%s", pointName: "%s", level: 1 ) }' % (site_id, key)
-            requests.post(self.url + '/graphql', json={'query': mutation})
+            if current_status == "error":
+                error_log = self.get_error_log(site_id)
+                raise AlfalfaException(error_log)
 
-    # Return a dictionary of the output values
-    # result = {
-    # output_name1 : output_value1,
-    # output_name2 : output_value2
-    # }
-    def outputs(self, site_id):
-        query = 'query { viewer { sites(siteRef: "%s") { points(cur: true) { dis tags { key value } } } } }' % (site_id)
-        payload = {'query': query}
-        response = requests.post(self.url + '/graphql', json=payload)
+            if current_status != previous_status:
+                print("Desired status: {}\t\tCurrent status: {}".format(desired_status, current_status))
+                previous_status = current_status
+            if current_status == desired_status:
+                return
+            sleep(2)
+        raise AlfalfaClientExcpetion(f"'wait' timed out waiting for status: '{desired_status}', current status: '{current_status}'")
 
-        j = response.json()
-        points = j["data"]["viewer"]["sites"][0]["points"]
-        result = {}
+    def upload_model(self, model_path: os.PathLike) -> ModelID:
+        """Upload a model to alfalfa
 
-        for point in points:
-            tags = point["tags"]
-            for tag in tags:
-                if tag["key"] == "curVal":
-                    result[convert(point["dis"])] = convert(tag["value"])
-                    break
+        :param model_path: path to model file or folder or list of paths
 
-        return result
+        :returns: id of model"""
+        model_path = prepare_model(model_path)
+        filename = os.path.basename(model_path)
 
-    # Return a list of all of the points in the
-    # model which have the 'cur' tag.
-    # result = [output_name1, output_name2, ...]
-    # TODO this is semi-duplicate of the get_read_site_points method.
-    def all_cur_points(self, site_id):
-        query = 'query { viewer { sites(siteRef: "%s") { points(cur: true) { dis tags { key value } } } } }' % (site_id)
-        payload = {'query': query}
-        response = requests.post(self.url + '/graphql', json=payload)
+        payload = {'modelName': filename}
 
-        j = response.json()
-        points = j["data"]["viewer"]["sites"][0]["points"]
-        result = []
+        response = self._request('models/upload', parameters=payload)
+        response_body = response.json()
+        post_url = response_body['url']
 
-        for point in points:
-            result.append(convert(point["dis"]))
+        model_id = response_body['modelID']
+        form_data = OrderedDict(response_body['fields'])
+        form_data['file'] = ('filename', open(model_path, 'rb'))
 
-        return result
+        encoder = MultipartEncoder(fields=form_data)
+        response = requests.post(post_url, data=encoder, headers={'Content-Type': encoder.content_type})
+        response.raise_for_status()
+        assert response.status_code == 204, "Model upload failed"
 
-    # Return a dictionary of the units for each
-    # of the points.  Only points with units are returned.
-    # result = {
-    # output_name1 : unit1,
-    # output_name2 : unit12
-    # }
-    def all_cur_points_with_units(self, site_id):
-        query = 'query { viewer { sites(siteRef: "%s") { points(cur: true) { dis tags { key value } } } } }' % (site_id)
-        payload = {'query': query}
-        response = requests.post(self.url + '/graphql', json=payload)
+        return model_id
 
-        j = response.json()
-        points = j["data"]["viewer"]["sites"][0]["points"]
-        result = {}
+    def create_run_from_model(self, model_id: Union[ModelID, List[ModelID]], wait_for_status: bool = True) -> SiteID:
+        """Create a run from a model
 
-        for point in points:
-            tags = point["tags"]
-            for tag in tags:
-                if tag["key"] == "unit":
-                    result[convert(point["dis"])] = convert(tag["value"])
-                    break
+        :param model_id: id of model to create a run from or list of ids
 
-        return result
+        :returns: id of run created"""
+        run_id = None
+        response = self._request(f"models/{model_id}/createRun")
+        run_id = response.json()["runID"]
 
-    # Return the current time, as understood by the simulation
-    # result = String(%Y-%m-%dT%H:%M:%S)
-    def get_sim_time(self, site_id):
-        query = 'query { viewer { runs(run_id: "%s") { sim_time } } }' % (site_id)
-        payload = {'query': query}
-        response = requests.post(self.url + '/graphql', json=payload)
+        if wait_for_status:
+            self.wait(run_id, "ready")
 
-        j = response.json()
-        dt = j["data"]["viewer"]["runs"]["sim_time"]
-        return dt
+        return run_id
 
-    # Return a list of all the points in the model which
-    # have the 'writable' tag.
-    # result = [output_name1, output_name2, ...]
-    def all_writable_points(self, site_id):
-        query = 'query { viewer { sites(siteRef: "%s") { points(writable: true) { dis tags { key value } } } } }' % (
-            site_id)
-        payload = {'query': query}
-        response = requests.post(self.url + '/graphql', json=payload)
+    @parallelize
+    def submit(self, model_path: Union[str, List[str]], wait_for_status: bool = True) -> str:
+        """Submit a model to alfalfa
 
-        j = response.json()
-        points = j["data"]["viewer"]["sites"][0]["points"]
-        result = []
+        :param path: path to the model to upload or list of paths
+        :param wait_for_status: wait for model to be "READY" before returning
 
-        for point in points:
-            result.append(convert(point["dis"]))
+        :returns: id of created run
+        :rtype: str"""
 
-        return result
+        model_id = self.upload_model(model_path)
 
-    # Return a list of all the points in the model which
-    # have the 'cur' and 'writable' tag.
-    # result = [output_name1, output_name2, ...]
-    def all_cur_writable_points(self, site_id):
-        query = 'query { viewer { sites(siteRef: "%s") { points(writable: true, cur: true) { dis tags { key value } } } } }' % (
-            site_id)
-        payload = {'query': query}
-        response = requests.post(self.url + '/graphql', json=payload)
+        # After the file has been uploaded, then tell BOPTEST to process the site
+        # This is done not via the haystack api, but through a graphql api
+        run_id = self.create_run_from_model(model_id, wait_for_status=wait_for_status)
 
-        j = response.json()
-        points = j["data"]["viewer"]["sites"][0]["points"]
-        result = []
+        return run_id
 
-        for point in points:
-            result.append(convert(point["dis"]))
+    @parallelize
+    def start(self, site_id: Union[SiteID, List[SiteID]], start_datetime: Union[Number, datetime], end_datetime: Union[Number, datetime], timescale: int = 5, external_clock: bool = False, realtime: bool = False, wait_for_status: bool = True):
+        """Start one run from a model.
 
-        return result
+        :param site_id: id of site or list of ids
+        :param start_datetime: time to start the model from
+        :param end_datetime: time to stop the model at (may not be honored for external_clock=True)
+        :param timescale: multiple of real time to run model at (for external_clock=False)
+        :param realtime: run model with timescale=1
+        :param wait_for_status: wait for model to be "RUNNING" before returning
+        """
+        parameters = {}
+        parameters['startDatetime'] = str(start_datetime)
+        parameters['endDatetime'] = str(end_datetime)
+        parameters['timescale'] = timescale
+        parameters['externalClock'] = external_clock
+        parameters['realtime'] = realtime
 
-    # Return list of dictionary
-    # point entities.  The entities will be filtered by
-    # to correspond to the site_id passed, with the following:
-    #   - point and cur and not equipRef
-    def get_read_site_points(self, site_id):
-        query = 'siteRef==@{} and point and cur and not equipRef'.format(site_id)
-        response = requests.get(self.haystack_filter + query,
-                                headers=self.haystack_json_header)
-        try:
-            temp = response.json()
-            readable_site_points = process_haystack_rows(temp)
-        except BaseException:
-            readable_site_points = []
-        return readable_site_points
+        response = self._request(f"sites/{site_id}/start", parameters=parameters)
 
-    # Return list of dictionary point entities.
-    # Entities will be filtered to correspond to the site_id
-    # passed, with the following:
-    #   - point and writable and not equipRef
-    def get_write_site_points(self, site_id):
-        query = 'siteRef==@{} and point and writable and not equipRef'.format(site_id)
-        response = requests.get(self.haystack_filter + query,
-                                headers=self.haystack_json_header)
-        try:
-            temp = response.json()
-            writable_site_points = process_haystack_rows(temp)
-        except BaseException:
-            writable_site_points = []
-        return writable_site_points
+        assert response.status_code == 204, "Got wrong status_code from alfalfa"
 
-    # Return list of dictionary point entities.
-    # Entities will be filtered to correspond to the site_id
-    # passed, with the following:
-    #   - point and writable and cur and not equipRef
-    def get_read_write_site_points(self, site_id):
-        query = 'siteRef==@{} and point and writable and cur and not equipRef'.format(site_id)
-        response = requests.get(self.haystack_filter + query,
-                                headers=self.haystack_json_header)
-        try:
-            temp = response.json()
-            readable_writable_site_points = process_haystack_rows(temp)
-        except BaseException:
-            readable_writable_site_points = []
-        return readable_writable_site_points
+        if wait_for_status:
+            self.wait(site_id, "running")
 
-    def get_thermal_zones(self, site_id):
-        query = 'siteRef==@{} and zone'.format(site_id)
-        response = requests.get(self.haystack_filter + query,
-                                headers=self.haystack_json_header)
-        try:
-            temp = response.json()
-            readable_writable_site_points = process_haystack_rows(temp)
-        except BaseException:
-            readable_writable_site_points = []
-        return readable_writable_site_points
+    @parallelize
+    def stop(self, site_id: Union[SiteID, List[SiteID]], wait_for_status: bool = True):
+        """Stop a run
 
-    # Return a dictionary of the current input values
-    # result = {
-    # input_name1 : input_value1,
-    # input_name2 : input_value2
-    # }
-    def inputs(self, site_id):
-        query = 'query { viewer { sites(siteRef: "%s") { points(writable: true) { dis tags { key value } } } } }' % (
-            site_id)
-        payload = {'query': query}
-        response = requests.post(self.url + '/graphql', json=payload)
+        :param site_id: id of the site or list of ids
+        :param wait_for_status: wait for the site to be "complete" before returning
+        """
 
-        j = response.json()
-        points = j["data"]["viewer"]["sites"][0]["points"]
-        result = {}
+        response = self._request(f"sites/{site_id}/stop")
 
-        for point in points:
-            tags = point["tags"]
-            for tag in tags:
-                if tag["key"] == "writeStatus":
-                    result[convert(point["dis"])] = convert(tag["value"])
-                    break
+        assert response.status_code == 204, "Got wrong status_code from alfalfa"
 
-        return result
+        if wait_for_status:
+            self.wait(site_id, "complete")
+
+    @parallelize
+    def advance(self, site_id: Union[SiteID, List[SiteID]]) -> None:
+        """Advance a site 1 timestep
+
+        :param site_id: id of site or list of ids"""
+        self._request(f"sites/{site_id}/advance")
+
+    def get_inputs(self, site_id: str) -> List[str]:
+        """Get inputs of site
+
+        :param site_id: id of site
+        :returns: list of input names"""
+
+        response = self._request(f"sites/{site_id}/points/inputs", method="GET")
+        response_body = response.json()
+        inputs = []
+        for point in response_body["data"]:
+            if point["name"] != "":
+                inputs.append(point["name"])
+        return inputs
+
+    def set_inputs(self, site_id: str, inputs: dict) -> None:
+        """Set inputs of site
+
+        :param site_id: id of site
+        :param inputs: dictionary of point names and input values"""
+        point_writes = []
+        for name, value in inputs.items():
+            point_writes.append({'name': name, 'value': value})
+        print(point_writes)
+        self._request(f"sites/{site_id}/points/inputs", method="PUT", parameters={'points': point_writes})
+
+    def get_outputs(self, site_id: str) -> dict:
+        """Get outputs of site
+
+        :param site_id: id of site
+        :returns: dictionary of output names and values"""
+        response = self._request(f"sites/{site_id}/points/outputs", method="GET")
+        response_body = response.json()
+        outputs = {}
+        for point in response_body["data"]:
+            outputs[point["name"]] = point["value"]
+
+        return outputs
+
+    @parallelize
+    def get_sim_time(self, site_id: Union[SiteID, List[SiteID]]) -> datetime:
+        """Get sim_time of site
+
+        :param site_id: id of site or list of ids
+        :returns: datetime of site
+        """
+        response = self._request(f"sites/{site_id}/time", method="GET")
+        response_body = response.json()
+        return datetime.strptime(response_body["time"], '%Y-%m-%d %H:%M:%S')

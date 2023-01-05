@@ -34,12 +34,12 @@ def client():
 
 @pytest.fixture
 def run_id(client: AlfalfaClient, model_path: Path):
-    run_id = client.submit(create_zip(str(model_path)))
+    run_id = client.submit(model_path)
 
     yield run_id
 
     status = client.status(run_id)
-    if status == "RUNNING":
+    if status == "running":
         client.stop(run_id)
 
 
@@ -56,7 +56,7 @@ def end_datetime():
 @pytest.fixture
 def internal_clock_run_id(client: AlfalfaClient, run_id: str, start_datetime: datetime, end_datetime: datetime):
     params = {
-        "internal_clock": True,
+        "external_clock": False,
         "start_datetime": start_datetime,
         "end_datetime": end_datetime,
         "timescale": 5

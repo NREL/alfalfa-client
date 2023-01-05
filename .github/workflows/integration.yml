@@ -20,7 +20,7 @@ jobs:
       - name: Install Python
         uses: actions/setup-python@v2
         with:
-          python-version: "3.7"
+          python-version: "3.8"
 
       - name: Install poetry
         uses: abatilo/actions-poetry@v2.0.0
@@ -29,6 +29,10 @@ jobs:
 
       - name: Start Alfalfa
         uses: NREL/alfalfa-action@v1
+        with:
+          tag: "0.4.2-pr1"
+          compose-file-ref: "modelica_use_datetime"
+          worker-scale: 2
 
       - name: Run tests with poetry and pytest
         run: |
