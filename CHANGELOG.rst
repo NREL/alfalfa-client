@@ -1,7 +1,7 @@
 Change Log
 ==========
 
-v0.4.1
+v0.5.0 (Unreleased)
 ------
 * Drop support for Python 3.7
 
