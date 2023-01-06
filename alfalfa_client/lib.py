@@ -33,11 +33,20 @@ import functools
 import shutil
 import tempfile
 from functools import partial
+from os import PathLike, path
 from pathlib import Path
 from typing import List
 
 
 def parallelize(func):
+    """Parallelize a function
+    Decorator which, when applied to a function, will parallelize the function
+    on the first non-self parameter. If a list is passed n instances of the
+    original function will be called inside Threads. The results will be returned
+    as a list with the same order as the original. If a list is not passed, the
+    original function will be called.
+
+    """
 
     def parallel_call(func, iter_vals: List, args: List = [], kwargs: dict = {}):
         responses = [None] * len(iter_vals)
@@ -59,17 +68,32 @@ def parallelize(func):
     return parallel_wrapper
 
 
-def create_zip(model_dir):
-    zip_file_fd, zip_file_path = tempfile.mkstemp(suffix='.zip')
+def create_zip(dir: PathLike) -> str:
+    """Create Zip
+    Takes a directory and creates a temporary zip file of it.
+
+    :param dir: directory to create zip of
+
+    :returns: path of zip file
+    """
+    zip_file_fd, zip_file_path = tempfile.mkstemp(prefix=path.basename(dir), suffix='.zip')
     zip_file_path = Path(zip_file_path)
-    shutil.make_archive(zip_file_path.parent / zip_file_path.stem, "zip", model_dir)
+    shutil.make_archive(str(zip_file_path.parent / zip_file_path.stem), "zip", None, str(dir))
 
     return zip_file_path
 
 
-def prepare_model(model_path) -> str:
+def prepare_model(model_path: PathLike) -> str:
+    """Prepares model for upload
+    Takes a file or directory. If the input is a file it returns the file.
+    If the input is a directory it zips the directory and returns the path to that zip.
+
+    :param model_path: path to model
+
+    :returns: path of prepared model
+    """
     model_path = Path(model_path)
-    if (model_path).is_dir():
+    if model_path.is_dir():
         return str(create_zip(str(model_path.absolute())))
     else:
         return str(model_path.absolute())
