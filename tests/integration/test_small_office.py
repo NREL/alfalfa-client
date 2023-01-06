@@ -36,8 +36,8 @@ def test_basic_io():
 
     outputs = alfalfa.get_outputs(model_id)
 
-    assert pytest.approx(outputs["Test_Point_1_Value"], 12), "Test_Point_1 value has not been processed by the model"
-    assert pytest.approx(outputs["Test_Point_1_Enable_Value"], 1), "Enable flag for Test_Point_1 is not set correctly"
+    assert pytest.approx(12) == outputs["Test_Point_1_Value"], "Test_Point_1 value has not been processed by the model"
+    assert pytest.approx(1) == outputs["Test_Point_1_Enable_Value"], "Enable flag for Test_Point_1 is not set correctly"
 
     # Shut down
     alfalfa.stop(model_id)
@@ -48,9 +48,7 @@ def test_basic_io():
 def test_many_model_operations():
     alfalfa = AlfalfaClient(host='http://localhost')
     num_models = 2
-    model_paths = ['tests/integration/models/small_office' for _ in range(num_models)]
-
-    print("If this print statement isn't here the test fails in github actions")
+    model_paths = ['tests/integration/models/small_office'] * num_models
 
     # Upload Models
     run_ids = alfalfa.submit(model_paths)
