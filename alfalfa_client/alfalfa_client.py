@@ -270,7 +270,6 @@ class AlfalfaClient:
         point_writes = []
         for name, value in inputs.items():
             point_writes.append({'name': name, 'value': value})
-        print(point_writes)
         self._request(f"sites/{site_id}/points/inputs", method="PUT", parameters={'points': point_writes})
 
     def get_outputs(self, site_id: str) -> dict:
