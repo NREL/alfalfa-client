@@ -295,3 +295,21 @@ class AlfalfaClient:
         response = self._request(f"sites/{site_id}/time", method="GET")
         response_body = response.json()
         return datetime.strptime(response_body["time"], '%Y-%m-%d %H:%M:%S')
+
+    def set_alias(self, alias: str, site_id: SiteID) -> None:
+        """Set alias to point to a site_id
+
+        :param site_id: id of site to point alias to
+        :param alias: alias to use"""
+
+        self._request(f"aliases/{alias}", method="PUT", parameters={"siteId": site_id})
+
+    def get_alias(self, alias: str) -> SiteID:
+        """Get site_id from alias
+
+        :param alias: alias
+        :returns: Id of site associated with alias"""
+
+        response = self._request(f"aliases/{alias}", method="GET")
+        response_body = response.json()
+        return response_body

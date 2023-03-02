@@ -42,6 +42,12 @@ def test_stop(client: AlfalfaClient, internal_clock_run_id: str):
     assert client.status(internal_clock_run_id) == "complete"
 
 
+@pytest.mark.integration
+def test_alias(client: AlfalfaClient, internal_clock_run_id: str):
+    client.set_alias("test", internal_clock_run_id)
+    assert client.get_alias("test") == internal_clock_run_id
+
+
 # @pytest.mark.integration
 # def test_error_handling(client: AlfalfaClient, run_id: str):
 #     with pytest.raises(AlfalfaException):
