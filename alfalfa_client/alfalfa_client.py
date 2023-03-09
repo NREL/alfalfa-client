@@ -43,7 +43,7 @@ from requests_toolbelt import MultipartEncoder
 
 from alfalfa_client.lib import (
     AlfalfaAPIException,
-    AlfalfaClientExcpetion,
+    AlfalfaClientException,
     AlfalfaException,
     parallelize,
     prepare_model
@@ -140,7 +140,7 @@ class AlfalfaClient:
             if current_status == desired_status:
                 return
             sleep(2)
-        raise AlfalfaClientExcpetion(f"'wait' timed out waiting for status: '{desired_status}', current status: '{current_status}'")
+        raise AlfalfaClientException(f"'wait' timed out waiting for status: '{desired_status}', current status: '{current_status}'")
 
     def upload_model(self, model_path: os.PathLike) -> ModelID:
         """Upload a model to alfalfa
@@ -172,9 +172,9 @@ class AlfalfaClient:
         """Create a run from a model
 
         :param model_id: id of model to create a run from or list of ids
+        :param wait_for_status: wait for model to be "READY" before returning
 
         :returns: id of run created"""
-        run_id = None
         response = self._request(f"models/{model_id}/createRun")
         run_id = response.json()["runID"]
 
@@ -187,7 +187,7 @@ class AlfalfaClient:
     def submit(self, model_path: Union[str, List[str]], wait_for_status: bool = True) -> str:
         """Submit a model to alfalfa
 
-        :param path: path to the model to upload or list of paths
+        :param model_path: path to the model to upload or list of paths
         :param wait_for_status: wait for model to be "READY" before returning
 
         :returns: id of created run
@@ -196,7 +196,7 @@ class AlfalfaClient:
         model_id = self.upload_model(model_path)
 
         # After the file has been uploaded, then tell BOPTEST to process the site
-        # This is done not via the haystack api, but through a graphql api
+        # This is done not via the haystack api, but through a REST api
         run_id = self.create_run_from_model(model_id, wait_for_status=wait_for_status)
 
         return run_id
@@ -209,15 +209,17 @@ class AlfalfaClient:
         :param start_datetime: time to start the model from
         :param end_datetime: time to stop the model at (may not be honored for external_clock=True)
         :param timescale: multiple of real time to run model at (for external_clock=False)
+        :param external_clock: run model with an external advancer
         :param realtime: run model with timescale=1
         :param wait_for_status: wait for model to be "RUNNING" before returning
         """
-        parameters = {}
-        parameters['startDatetime'] = str(start_datetime)
-        parameters['endDatetime'] = str(end_datetime)
-        parameters['timescale'] = timescale
-        parameters['externalClock'] = external_clock
-        parameters['realtime'] = realtime
+        parameters = {
+            'startDatetime': str(start_datetime),
+            'endDatetime': str(end_datetime),
+            'timescale': timescale,
+            'externalClock': external_clock,
+            'realtime': realtime
+        }
 
         response = self._request(f"sites/{site_id}/start", parameters=parameters)
 
