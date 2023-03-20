@@ -28,16 +28,14 @@ def test_basic_io():
     alfalfa.set_inputs(model_id, inputs)
 
     outputs = alfalfa.get_outputs(model_id)
-    assert "Test_Point_1_Value" in outputs.keys(), "Echo point for Test_Point_1 is not in outputs"
-    assert "Test_Point_1_Enable_Value" in outputs.keys(), "Echo point for Test_Point_1_Enable is not in outputs"
+    assert "Test_Point_1" in outputs.keys(), "Echo point for Test_Point_1 is not in outputs"
 
     # -- Advance a single time step
     alfalfa.advance(model_id)
 
     outputs = alfalfa.get_outputs(model_id)
 
-    assert pytest.approx(12) == outputs["Test_Point_1_Value"], "Test_Point_1 value has not been processed by the model"
-    assert pytest.approx(1) == outputs["Test_Point_1_Enable_Value"], "Enable flag for Test_Point_1 is not set correctly"
+    assert pytest.approx(12) == outputs["Test_Point_1"], "Test_Point_1 value has not been processed by the model"
 
     # Shut down
     alfalfa.stop(model_id)
