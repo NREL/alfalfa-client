@@ -123,5 +123,5 @@ class AlfalfaAPIException(AlfalfaException):
     """Wrapper for API errors"""
 
 
-class AlfalfaClientExcpetion(AlfalfaException):
+class AlfalfaClientException(AlfalfaException):
     """Wrapper for exceptions in client operation"""
