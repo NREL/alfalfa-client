@@ -184,7 +184,7 @@ class AlfalfaClient:
         return run_id
 
     @parallelize
-    def submit(self, model_path: Union[str, List[str]], wait_for_status: bool = True) -> str:
+    def submit(self, model_path: Union[str, List[str]], wait_for_status: bool = True) -> SiteID:
         """Submit a model to alfalfa
 
         :param model_path: path to the model to upload or list of paths

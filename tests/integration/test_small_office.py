@@ -49,7 +49,7 @@ def test_many_model_operations():
     model_paths = ['tests/integration/models/small_office'] * num_models
 
     # Upload Models
-    run_ids = alfalfa.submit(model_paths)
+    run_ids = alfalfa.submit(model_path=model_paths)
 
     for run_id in run_ids:
         assert alfalfa.status(run_id) == "ready", "Run has incorrect status"

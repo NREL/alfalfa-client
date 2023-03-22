@@ -59,7 +59,19 @@ def parallelize(func):
         return responses
 
     @functools.wraps(func)
-    def parallel_wrapper(self, val, *args, **kwargs):
+    def parallel_wrapper(self, *args, **kwargs):
+        # Find the first parameter as either an arg or kwarg
+        if len(args) > 0:
+            val = args[0]
+            args = args[1:]
+        else:
+            first_varname = func.__code__.co_varnames[1]
+            if first_varname in kwargs.keys():
+                val = kwargs[first_varname]
+                del kwargs[first_varname]
+            else:
+                raise TypeError(f"{func.__name__}() missing 1 required positional argument: '{first_varname}'")
+
         if isinstance(val, list):
             return parallel_call(partial(func, self), val, args, kwargs)
         else:
