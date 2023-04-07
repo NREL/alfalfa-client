@@ -8,12 +8,14 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-python@v3
+      - name: Install poetry
+        uses: abatilo/actions-poetry@v2.0.0
+        with:
+          poetry-version: "1.3.1"
       - name: Install dependencies
-        run: |
-          pip install sphinx sphinx_rtd_theme
+        run: poetry install
       - name: Sphinx build
-        run: |
-          sphinx-build docs _build
+        run: poetry run sphinx-build docs _build
       - name: Deploy
         uses: peaceiris/actions-gh-pages@v3
         if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/generate_docs' }}
