@@ -282,7 +282,10 @@ class AlfalfaClient:
         response_body = response.json()
         outputs = {}
         for point in response_body["data"]:
-            outputs[point["name"]] = point["value"]
+            if "value" in point.keys():
+                outputs[point["name"]] = point["value"]
+            else:
+                outputs[point["name"]] = None
 
         return outputs
 
