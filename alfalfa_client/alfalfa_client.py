@@ -60,7 +60,7 @@ class AlfalfaClient:
         :param host: url for host of alfalfa web server
         :param api_version: version of alfalfa api to use (probably don't change this)
         """
-        self.host = host.lstrip('/')
+        self.host = host.rstrip('/')
         self.haystack_filter = self.host + '/haystack/read?filter='
         self.haystack_json_header = {
             'Content-Type': 'application/json',
