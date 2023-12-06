@@ -138,7 +138,7 @@ class AlfalfaClient:
             if current_status != previous_status:
                 print("Desired status: {}\t\tCurrent status: {}".format(desired_status, current_status))
                 previous_status = current_status
-            if current_status == desired_status:
+            if current_status == desired_status.upper():
                 return
             sleep(2)
         raise AlfalfaClientException(f"'wait' timed out waiting for status: '{desired_status}', current status: '{current_status}'")

@@ -8,38 +8,38 @@ from alfalfa_client.alfalfa_client import AlfalfaClient
 @pytest.mark.integration
 def test_basic_io():
     alfalfa = AlfalfaClient(host='http://localhost')
-    model_id = alfalfa.submit('tests/integration/models/small_office')
+    run_id = alfalfa.submit('tests/integration/models/small_office')
 
-    alfalfa.wait(model_id, "ready")
+    alfalfa.wait(run_id, "ready")
     alfalfa.start(
-        model_id,
+        run_id,
         external_clock=True,
         start_datetime=datetime(2019, 1, 2, 0, 2, 0),
         end_datetime=datetime(2019, 1, 3, 0, 0, 0)
     )
 
-    alfalfa.wait(model_id, "running")
+    alfalfa.wait(run_id, "running")
 
-    inputs = alfalfa.get_inputs(model_id)
+    inputs = alfalfa.get_inputs(run_id)
     assert "Test_Point_1" in inputs, "Test_Point_1 is in input points"
     inputs = {}
     inputs["Test_Point_1"] = 12
 
-    alfalfa.set_inputs(model_id, inputs)
+    alfalfa.set_inputs(run_id, inputs)
 
-    outputs = alfalfa.get_outputs(model_id)
+    outputs = alfalfa.get_outputs(run_id)
     assert "Test_Point_1" in outputs.keys(), "Echo point for Test_Point_1 is not in outputs"
 
     # -- Advance a single time step
-    alfalfa.advance(model_id)
+    alfalfa.advance(run_id)
 
-    outputs = alfalfa.get_outputs(model_id)
+    outputs = alfalfa.get_outputs(run_id)
 
     assert pytest.approx(12) == outputs["Test_Point_1"], "Test_Point_1 value has not been processed by the model"
 
     # Shut down
-    alfalfa.stop(model_id)
-    alfalfa.wait(model_id, "complete")
+    alfalfa.stop(run_id)
+    alfalfa.wait(run_id, "complete")
 
 
 @pytest.mark.integration
@@ -52,7 +52,7 @@ def test_many_model_operations():
     run_ids = alfalfa.submit(model_path=model_paths)
 
     for run_id in run_ids:
-        assert alfalfa.status(run_id) == "ready", "Run has incorrect status"
+        assert alfalfa.status(run_id) == "READY", "Run has incorrect status"
 
     # Start Runs
     start_datetime = datetime(2022, 1, 1, 0, 0)
@@ -62,7 +62,7 @@ def test_many_model_operations():
                   external_clock=True)
 
     for run_id in run_ids:
-        assert alfalfa.status(run_id) == "running", "Run has incorrect status"
+        assert alfalfa.status(run_id) == "RUNNING", "Run has incorrect status"
 
     # Advance Runs
     sim_datetime = start_datetime
@@ -77,4 +77,4 @@ def test_many_model_operations():
     alfalfa.stop(run_ids)
 
     for run_id in run_ids:
-        assert alfalfa.status(run_id) == "complete", "Run has incorrect status"
+        assert alfalfa.status(run_id) == "COMPLETE", "Run has incorrect status"
