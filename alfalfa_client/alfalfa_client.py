@@ -99,7 +99,7 @@ class AlfalfaClient:
         :returns: status of run
         """
         response = self._request(f"runs/{run_id}", method="GET").json()
-        return response["status"]
+        return response["payload"]["status"]
 
     @parallelize
     def get_error_log(self, run_id: Union[RunID, List[RunID]]) -> str:
@@ -109,7 +109,7 @@ class AlfalfaClient:
         :returns: error log from run
         """
         response = self._request(f"runs/{run_id}", method="GET").json()
-        return response["errorLog"]
+        return response["payload"]["errorLog"]
 
     @parallelize
     def wait(self, run_id: Union[RunID, List[RunID]], desired_status: str, timeout: float = 600) -> None:
@@ -130,7 +130,7 @@ class AlfalfaClient:
                 if e.response.status_code != 404:
                     raise e
 
-            if current_status == "error":
+            if current_status == "ERROR":
                 error_log = self.get_error_log(run_id)
                 raise AlfalfaException(error_log)
 
@@ -154,7 +154,7 @@ class AlfalfaClient:
         payload = {'modelName': filename}
 
         response = self._request('models/upload', parameters=payload)
-        response_body = response.json()
+        response_body = response.json()["payload"]
         post_url = response_body['url']
 
         model_id = response_body['modelID']
@@ -176,7 +176,7 @@ class AlfalfaClient:
 
         :returns: id of run created"""
         response = self._request(f"models/{model_id}/createRun")
-        run_id = response.json()["runID"]
+        run_id = response.json()["payload"]["runID"]
 
         if wait_for_status:
             self.wait(run_id, "ready")
@@ -258,7 +258,7 @@ class AlfalfaClient:
 
         response = self._request(f"runs/{run_id}/points", method="POST",
                                  parameters={ "pointTypes": ["INPUT", "BIDIRECTIONAL"]})
-        response_body = response.json()
+        response_body = response.json()["payload"]
         inputs = []
         for point in response_body:
             if point["name"] != "":
@@ -284,7 +284,7 @@ class AlfalfaClient:
         :returns: dictionary of output names and values"""
         response = self._request(f"runs/{run_id}/points/values", method="POST",
                                  parameters={ "pointTypes": ["OUTPUT", "BIDIRECTIONAL"]})
-        response_body = response.json()
+        response_body = response.json()["payload"]
         outputs = {}
         for point in response_body:
             name = self._get_point_translation(run_id, point["id"])
@@ -303,7 +303,7 @@ class AlfalfaClient:
         :returns: datetime of site
         """
         response = self._request(f"runs/{run_id}/time", method="GET")
-        response_body = response.json()
+        response_body = response.json()["payload"]
         return datetime.strptime(response_body["time"], '%Y-%m-%d %H:%M:%S')
 
     def set_alias(self, alias: str, run_id: RunID) -> None:
@@ -321,7 +321,7 @@ class AlfalfaClient:
         :returns: Id of run associated with alias"""
 
         response = self._request(f"aliases/{alias}", method="GET")
-        response_body = response.json()
+        response_body = response.json()["payload"]
         return response_body
 
     def _get_point_translation(self, *args):
@@ -335,6 +335,6 @@ class AlfalfaClient:
 
     def _fetch_points(self, run_id):
         response = self._request(f"runs/{run_id}/points", method = "GET")
-        for point in response.json():
+        for point in response.json()["payload"]:
             self.point_translation_map[(run_id, point["name"])] = point["id"]
             self.point_translation_map[(run_id, point["id"])] = point["name"]
