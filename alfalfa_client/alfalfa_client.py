@@ -157,7 +157,7 @@ class AlfalfaClient:
         response_body = response.json()["payload"]
         post_url = response_body['url']
 
-        model_id = response_body['modelID']
+        model_id = response_body['modelId']
         form_data = OrderedDict(response_body['fields'])
         form_data['file'] = ('filename', open(model_path, 'rb'))
 
@@ -176,7 +176,7 @@ class AlfalfaClient:
 
         :returns: id of run created"""
         response = self._request(f"models/{model_id}/createRun")
-        run_id = response.json()["payload"]["runID"]
+        run_id = response.json()["payload"]["runId"]
 
         if wait_for_status:
             self.wait(run_id, "ready")
