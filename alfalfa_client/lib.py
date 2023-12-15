@@ -28,13 +28,13 @@
 
 import concurrent.futures
 import functools
+import json
 import shutil
 import tempfile
 from functools import partial
 from os import PathLike, path
 from pathlib import Path
 from typing import List
-import json
 
 
 def parallelize(func):
@@ -120,6 +120,7 @@ class AlfalfaWorkerException(AlfalfaException):
 
 class AlfalfaAPIException(AlfalfaException):
     """Wrapper for API errors"""
+
     def add_payload(self, payload):
         self.payload = payload
 
@@ -127,7 +128,6 @@ class AlfalfaAPIException(AlfalfaException):
         if self.payload:
             return super().__str__() + '\nAPI Payload: \n' + json.dumps(self.payload)
         return super().__str__()
-
 
 
 class AlfalfaClientException(AlfalfaException):
