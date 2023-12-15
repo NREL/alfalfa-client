@@ -47,6 +47,14 @@ def test_alias(client: AlfalfaClient, internal_clock_run_id: str):
     client.set_alias("test", internal_clock_run_id)
     assert client.get_alias("test") == internal_clock_run_id
 
+    sim_time = client.get_sim_time(internal_clock_run_id)
+    alias_sim_time = client.get_sim_time("test")
+    assert sim_time == alias_sim_time
+
+    client.advance("test")
+    sim_time = client.get_sim_time(internal_clock_run_id)
+    alias_sim_time = client.get_sim_time("test")
+    assert sim_time == alias_sim_time
 
 # @pytest.mark.integration
 # def test_error_handling(client: AlfalfaClient, run_id: str):

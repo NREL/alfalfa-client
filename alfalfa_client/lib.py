@@ -34,6 +34,7 @@ from functools import partial
 from os import PathLike, path
 from pathlib import Path
 from typing import List
+import json
 
 
 def parallelize(func):
@@ -119,6 +120,14 @@ class AlfalfaWorkerException(AlfalfaException):
 
 class AlfalfaAPIException(AlfalfaException):
     """Wrapper for API errors"""
+    def add_payload(self, payload):
+        self.payload = payload
+
+    def __str__(self) -> str:
+        if self.payload:
+            return super().__str__() + '\nAPI Payload: \n' + json.dumps(self.payload)
+        return super().__str__()
+
 
 
 class AlfalfaClientException(AlfalfaException):
