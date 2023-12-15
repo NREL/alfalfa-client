@@ -81,10 +81,13 @@ class AlfalfaClient:
         else:
             response = requests.request(method=method, url=self.url + endpoint)
 
-        if response.status_code == 400 or response.status_code == 500:
+        if response.status_code >= 400:
             try:
                 body = response.json()
-                raise AlfalfaAPIException(body["error"])
+                exception = AlfalfaAPIException(body["message"])
+                if "payload" in body:
+                    exception.add_note(json.dumps(body["payload"]))
+                raise exception
             except json.JSONDecodeError:
                 pass
         response.raise_for_status()
