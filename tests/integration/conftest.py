@@ -39,7 +39,7 @@ def run_id(client: AlfalfaClient, model_path: Path):
     yield run_id
 
     status = client.status(run_id)
-    if status == "running":
+    if status == "RUNNING":
         client.stop(run_id)
 
 

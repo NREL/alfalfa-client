@@ -28,6 +28,7 @@
 
 import concurrent.futures
 import functools
+import json
 import shutil
 import tempfile
 from functools import partial
@@ -119,6 +120,14 @@ class AlfalfaWorkerException(AlfalfaException):
 
 class AlfalfaAPIException(AlfalfaException):
     """Wrapper for API errors"""
+
+    def add_payload(self, payload):
+        self.payload = payload
+
+    def __str__(self) -> str:
+        if self.payload:
+            return super().__str__() + '\nAPI Payload: \n' + json.dumps(self.payload)
+        return super().__str__()
 
 
 class AlfalfaClientException(AlfalfaException):
