@@ -36,6 +36,8 @@ from os import PathLike, path
 from pathlib import Path
 from typing import List
 
+from requests import Response
+
 
 def parallelize(func):
     """Parallelize a function
@@ -121,8 +123,13 @@ class AlfalfaWorkerException(AlfalfaException):
 class AlfalfaAPIException(AlfalfaException):
     """Wrapper for API errors"""
 
-    def add_payload(self, payload):
-        self.payload = payload
+    def __init__(self, response: Response, *args: object) -> None:
+        self.response = response
+        body = response.json()
+        super().__init__(body["message"], *args)
+
+        if "payload" in body:
+            self.payload = json.dumps(body["payload"])
 
     def __str__(self) -> str:
         if hasattr(self, "payload"):
