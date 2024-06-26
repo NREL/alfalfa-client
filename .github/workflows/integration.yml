@@ -36,6 +36,11 @@ jobs:
           compose-file-ref: "develop"
           worker-scale: 2
 
+      - name: Wait for web API
+        uses: iFaxity/wait-on-action@v1.2.1
+        with:
+          resource: http://localhost
+
       - name: Run tests with poetry and pytest
         run: |
           poetry install
