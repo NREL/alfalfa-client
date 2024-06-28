@@ -26,11 +26,11 @@
 # OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 # ****************************************************************************************************
 
-import errno
 import json
 import os
 from collections import OrderedDict
 from datetime import datetime
+from numbers import Number
 from time import sleep, time
 from typing import List, Union
 from urllib.parse import urljoin
@@ -151,8 +151,6 @@ class AlfalfaClient:
         :param model_path: path to model file or folder or list of paths
 
         :returns: id of model"""
-        if not os.path.exists(model_path):
-            raise FileNotFoundError(errno.ENOENT, os.strerror(errno.ENOENT), model_path)
         model_path = prepare_model(model_path)
         filename = os.path.basename(model_path)
 
@@ -207,7 +205,7 @@ class AlfalfaClient:
         return run_id
 
     @parallelize
-    def start(self, run_id: Union[RunID, List[RunID]], start_datetime: datetime, end_datetime: datetime, timescale: int = 5, external_clock: bool = False, realtime: bool = False, wait_for_status: bool = True):
+    def start(self, run_id: Union[RunID, List[RunID]], start_datetime: Union[Number, datetime], end_datetime: Union[Number, datetime], timescale: int = 5, external_clock: bool = False, realtime: bool = False, wait_for_status: bool = True):
         """Start one run from a model.
 
         :param run_id: id of run or list of ids

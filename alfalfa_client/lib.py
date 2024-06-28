@@ -125,7 +125,7 @@ class AlfalfaAPIException(AlfalfaException):
         self.payload = payload
 
     def __str__(self) -> str:
-        if hasattr(self, "payload"):
+        if self.payload:
             return super().__str__() + '\nAPI Payload: \n' + json.dumps(self.payload)
         return super().__str__()
 
