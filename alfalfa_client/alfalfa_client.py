@@ -36,6 +36,7 @@ from typing import List, Union
 from urllib.parse import urljoin
 
 import requests
+from requests.exceptions import HTTPError
 from requests_toolbelt import MultipartEncoder
 
 from alfalfa_client.lib import (
@@ -80,9 +81,13 @@ class AlfalfaClient:
         else:
             response = requests.request(method=method, url=self.url + endpoint)
 
-        if response.status_code >= 400:
+        if response.status_code == 400 or response.status_code == 500:
             try:
-                raise AlfalfaAPIException(response)
+                body = response.json()
+                exception = AlfalfaAPIException(body["message"])
+                if "payload" in body:
+                    exception.add_payload(json.dumps(body["payload"]))
+                raise exception
             except json.JSONDecodeError:
                 pass
         response.raise_for_status()
@@ -124,7 +129,7 @@ class AlfalfaClient:
         while time() - timeout < start_time:
             try:
                 current_status = self.status(run_id)
-            except AlfalfaAPIException as e:
+            except HTTPError as e:
                 if e.response.status_code != 404:
                     raise e
 
@@ -275,8 +280,6 @@ class AlfalfaClient:
             id = self._get_point_translation(run_id, name)
             if id:
                 point_writes[id] = value
-            else:
-                raise AlfalfaClientException(f"No Point exists with name {name}")
         self._request(f"runs/{run_id}/points/values", method="PUT", parameters={'points': point_writes})
 
     def get_outputs(self, run_id: str) -> dict:
