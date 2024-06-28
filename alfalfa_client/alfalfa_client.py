@@ -260,7 +260,7 @@ class AlfalfaClient:
         :returns: list of input names"""
 
         response = self._request(f"runs/{run_id}/points", method="POST",
-                                 parameters={"pointTypes": ["INPUT", "BIDIRECTIONAL"]})
+                                 parameters={ "pointTypes": ["INPUT", "BIDIRECTIONAL"]})
         response_body = response.json()["payload"]
         inputs = []
         for point in response_body:
@@ -286,7 +286,7 @@ class AlfalfaClient:
         :param run_id: id of run
         :returns: dictionary of output names and values"""
         response = self._request(f"runs/{run_id}/points/values", method="POST",
-                                 parameters={"pointTypes": ["OUTPUT", "BIDIRECTIONAL"]})
+                                 parameters={ "pointTypes": ["OUTPUT", "BIDIRECTIONAL"]})
         response_body = response.json()["payload"]
         outputs = {}
         for point, value in response_body.items():
@@ -334,7 +334,7 @@ class AlfalfaClient:
         return None
 
     def _fetch_points(self, run_id):
-        response = self._request(f"runs/{run_id}/points", method="GET")
+        response = self._request(f"runs/{run_id}/points", method = "GET")
         for point in response.json()["payload"]:
             self.point_translation_map[(run_id, point["name"])] = point["id"]
             self.point_translation_map[(run_id, point["id"])] = point["name"]
