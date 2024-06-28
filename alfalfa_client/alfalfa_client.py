@@ -81,7 +81,7 @@ class AlfalfaClient:
         else:
             response = requests.request(method=method, url=self.url + endpoint)
 
-        if response.status_code == 400 or response.status_code == 500:
+        if response.status_code == 400:
             try:
                 body = response.json()
                 raise AlfalfaAPIException(body["error"])
@@ -270,11 +270,11 @@ class AlfalfaClient:
 
         :param run_id: id of run
         :param inputs: dictionary of point names and input values"""
-        point_writes = {}
+        point_writes = []
         for name, value in inputs.items():
             id = self._get_point_translation(run_id, name)
             if id:
-                point_writes[id] = value
+                point_writes.append({'id': id, 'value': value})
         self._request(f"runs/{run_id}/points/values", method="PUT", parameters={'points': point_writes})
 
     def get_outputs(self, run_id: str) -> dict:
@@ -286,9 +286,12 @@ class AlfalfaClient:
                                  parameters={ "pointTypes": ["OUTPUT", "BIDIRECTIONAL"]})
         response_body = response.json()["payload"]
         outputs = {}
-        for point, value in response_body.items():
-            name = self._get_point_translation(run_id, point)
-            outputs[name] = value
+        for point in response_body:
+            name = self._get_point_translation(run_id, point["id"])
+            if "value" in point.keys():
+                outputs[name] = point["value"]
+            else:
+                outputs[name] = None
 
         return outputs
 
