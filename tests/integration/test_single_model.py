@@ -15,7 +15,7 @@ def test_advance(client: AlfalfaClient, external_clock_run_id: str):
 
 @pytest.mark.integration
 def test_status(client: AlfalfaClient, internal_clock_run_id: str):
-    assert client.status(internal_clock_run_id) == "RUNNING"
+    assert client.status(internal_clock_run_id) == "running"
 
 
 @pytest.mark.integration
@@ -39,7 +39,7 @@ def test_output(client: AlfalfaClient, internal_clock_run_id: str):
 @pytest.mark.integration
 def test_stop(client: AlfalfaClient, internal_clock_run_id: str):
     client.stop(internal_clock_run_id)
-    assert client.status(internal_clock_run_id) == "COMPLETE"
+    assert client.status(internal_clock_run_id) == "complete"
 
 
 @pytest.mark.integration
